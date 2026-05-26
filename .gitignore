@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
 # dependencies
@@ -42,3 +43,13 @@ yarn-error.*
 .claude/
 AGENTS.md
 CLAUDE.md
+=======
+node_modules/
+.expo/
+.claude/
+AGENTS.md
+CLAUDE.md
+LICENSE
+*.log
+.env
+>>>>>>> main
