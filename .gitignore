@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-node_modules/
-.expo/
-=======
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
 # dependencies
@@ -43,13 +39,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
->>>>>>> 2dfeff36feb876ab6164e8a6f4917f95c7f5184b
 .claude/
 AGENTS.md
 CLAUDE.md
 LICENSE
-<<<<<<< HEAD
-*.log
-.env
-=======
->>>>>>> 2dfeff36feb876ab6164e8a6f4917f95c7f5184b
