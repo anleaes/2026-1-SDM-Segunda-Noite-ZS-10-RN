@@ -30,7 +30,11 @@ export default function PacienteForm({ route, navigation }) {
       }
       navigation.goBack();
     } catch (err) {
-      Alert.alert('Erro', 'Verifique os campos e tente novamente');
+      console.error('Erro na API: ', err.response?.data || err.message);
+      const detalhes = err.response?.data
+        ? JSON.stringify(err.response.data)
+        : err.message;
+      Alert.alert('Erro ao salvar', detalhes);
     }
   };
 
