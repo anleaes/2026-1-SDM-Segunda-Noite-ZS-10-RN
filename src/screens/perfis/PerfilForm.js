@@ -1,33 +1,42 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, Switch } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Switch } from 'react-native';
 import api from '../../services/api';
+import CampoTexto from '../../components/CampoTexto';
+import Seletor from '../../components/Seletor';
+import useColecao from '../../hooks/useColecao';
+import { formStyles } from '../../components/formStyles';
 
 export default function PerfilForm({ route, navigation }) {
   const editando = route.params?.perfil;
-  const [paciente, setPaciente] = useState('');
+  const [paciente, setPaciente] = useState(null);
   const [grupoRisco, setGrupoRisco] = useState(false);
   const [gestante, setGestante] = useState(false);
   const [alergias, setAlergias] = useState('');
   const [observacoes, setObservacoes] = useState('');
+  const [erros, setErros] = useState({});
+
+  const pacientes = useColecao('/pessoas/pacientes/', (p) => ({ valor: p.id, rotulo: p.nome }));
 
   useEffect(() => {
     if (editando) {
-      setPaciente(String(editando.paciente));
+      setPaciente(editando.paciente);
       setGrupoRisco(editando.grupo_risco);
       setGestante(editando.gestante);
-      setAlergias(editando.alergias);
-      setObservacoes(editando.observacoes);
+      setAlergias(editando.alergias || '');
+      setObservacoes(editando.observacoes || '');
     }
   }, []);
 
+  const validar = () => {
+    const e = {};
+    if (!paciente) e.paciente = 'Selecione o paciente.';
+    setErros(e);
+    return Object.keys(e).length === 0;
+  };
+
   const salvar = async () => {
-    const dados = {
-      paciente: parseInt(paciente),
-      grupo_risco: grupoRisco,
-      gestante: gestante,
-      alergias,
-      observacoes,
-    };
+    if (!validar()) return;
+    const dados = { paciente, grupo_risco: grupoRisco, gestante, alergias, observacoes };
     try {
       if (editando) {
         await api.put('/perfis/' + editando.id + '/', dados);
@@ -36,43 +45,35 @@ export default function PerfilForm({ route, navigation }) {
       }
       navigation.goBack();
     } catch (err) {
-      Alert.alert('Erro', 'Verifique os campos e tente novamente');
+      Alert.alert('Erro', 'Não foi possível salvar. Verifique os campos e tente novamente.');
     }
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.label}>ID do Paciente</Text>
-      <TextInput style={styles.input} value={paciente} onChangeText={setPaciente} keyboardType="numeric" />
+    <ScrollView style={formStyles.container}>
+      <Seletor label="Paciente *" valor={paciente} aoSelecionar={setPaciente} itens={pacientes.itens} carregando={pacientes.carregando} erro={erros.paciente}
+        mensagemVazio="Nenhum paciente cadastrado. Cadastre um paciente primeiro." />
 
       <View style={styles.switchRow}>
-        <Text style={styles.label}>Grupo de Risco</Text>
+        <Text style={formStyles.label}>Grupo de Risco</Text>
         <Switch value={grupoRisco} onValueChange={setGrupoRisco} />
       </View>
 
       <View style={styles.switchRow}>
-        <Text style={styles.label}>Gestante</Text>
+        <Text style={formStyles.label}>Gestante</Text>
         <Switch value={gestante} onValueChange={setGestante} />
       </View>
 
-      <Text style={styles.label}>Alergias</Text>
-      <TextInput style={[styles.input, { height: 80 }]} value={alergias} onChangeText={setAlergias} multiline />
+      <CampoTexto label="Alergias" value={alergias} onChangeText={setAlergias} multiline style={{ height: 80 }} />
+      <CampoTexto label="Observações" value={observacoes} onChangeText={setObservacoes} multiline style={{ height: 80 }} />
 
-      <Text style={styles.label}>Observacoes</Text>
-      <TextInput style={[styles.input, { height: 80 }]} value={observacoes} onChangeText={setObservacoes} multiline />
-
-      <TouchableOpacity style={styles.btnSalvar} onPress={salvar}>
-        <Text style={styles.btnTexto}>{editando ? 'Atualizar' : 'Cadastrar'}</Text>
+      <TouchableOpacity style={formStyles.btnSalvar} onPress={salvar}>
+        <Text style={formStyles.btnTexto}>{editando ? 'Atualizar' : 'Cadastrar'}</Text>
       </TouchableOpacity>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#f5f5f5' },
-  label: { fontSize: 14, fontWeight: 'bold', marginTop: 12, marginBottom: 4, color: '#333' },
-  input: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 16 },
   switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 },
-  btnSalvar: { backgroundColor: '#1E8449', padding: 14, borderRadius: 8, marginTop: 20, alignItems: 'center', marginBottom: 40 },
-  btnTexto: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
 });
