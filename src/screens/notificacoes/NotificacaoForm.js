@@ -1,179 +1,74 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ScrollView
-} from 'react-native';
-
+import { TouchableOpacity, Text, ScrollView, Alert } from 'react-native';
 import api from '../../services/api';
+import CampoTexto from '../../components/CampoTexto';
+import Seletor from '../../components/Seletor';
+import useColecao from '../../hooks/useColecao';
+import { formStyles, cores } from '../../components/formStyles';
+
+const TIPOS = [
+  { valor: 'lembrete', rotulo: 'Lembrete' },
+  { valor: 'alerta', rotulo: 'Alerta' },
+  { valor: 'informativo', rotulo: 'Informativo' },
+];
 
 export default function NotificacaoForm({ route, navigation }) {
-
   const editando = route.params?.notificacao;
-
-  const [paciente, setPaciente] = useState('');
+  const [paciente, setPaciente] = useState(null);
   const [titulo, setTitulo] = useState('');
   const [mensagem, setMensagem] = useState('');
-  const [tipo, setTipo] = useState('');
+  const [tipo, setTipo] = useState(null);
+  const [erros, setErros] = useState({});
+
+  const pacientes = useColecao('/pessoas/pacientes/', (p) => ({ valor: p.id, rotulo: p.nome }));
 
   useEffect(() => {
     if (editando) {
-      setPaciente(String(editando.paciente));
+      setPaciente(editando.paciente);
       setTitulo(editando.titulo);
       setMensagem(editando.mensagem);
       setTipo(editando.tipo);
     }
   }, []);
 
+  const validar = () => {
+    const e = {};
+    if (!paciente) e.paciente = 'Selecione o paciente.';
+    if (!titulo.trim()) e.titulo = 'Informe o título da notificação.';
+    if (!mensagem.trim()) e.mensagem = 'Informe a mensagem.';
+    if (!tipo) e.tipo = 'Selecione o tipo da notificação.';
+    setErros(e);
+    return Object.keys(e).length === 0;
+  };
+
   const salvar = async () => {
-
-    if (!paciente || !titulo || !mensagem || !tipo) {
-      Alert.alert('Atenção', 'Preencha todos os campos');
-      return;
-    }
-
-    const dados = {
-      paciente: parseInt(paciente),
-      titulo,
-      mensagem,
-      tipo
-    };
-
+    if (!validar()) return;
+    const dados = { paciente, titulo, mensagem, tipo };
     try {
-
       if (editando) {
-
-        await api.put(
-          `/notificacoes/${editando.id}/`,
-          dados
-        );
-
+        await api.put(`/notificacoes/${editando.id}/`, dados);
       } else {
-
-        await api.post(
-          '/notificacoes/',
-          dados
-        );
-
+        await api.post('/notificacoes/', dados);
       }
-
       navigation.goBack();
-
     } catch (err) {
-
-      Alert.alert(
-        'Erro',
-        'Não foi possível salvar a notificação'
-      );
-
+      Alert.alert('Erro', 'Não foi possível salvar a notificação.');
     }
-
   };
 
   return (
+    <ScrollView style={formStyles.container}>
+      <Seletor label="Paciente *" valor={paciente} aoSelecionar={setPaciente} itens={pacientes.itens} carregando={pacientes.carregando} erro={erros.paciente}
+        mensagemVazio="Nenhum paciente cadastrado. Cadastre um paciente primeiro." />
 
-    <ScrollView style={styles.container}>
+      <CampoTexto label="Título *" value={titulo} onChangeText={setTitulo} placeholder="Título da notificação" erro={erros.titulo} />
+      <CampoTexto label="Mensagem *" value={mensagem} onChangeText={setMensagem} placeholder="Mensagem" multiline numberOfLines={4} erro={erros.mensagem} />
 
-      <Text style={styles.label}>Paciente ID</Text>
+      <Seletor label="Tipo *" valor={tipo} aoSelecionar={setTipo} itens={TIPOS} erro={erros.tipo} placeholder="Selecione o tipo" />
 
-      <TextInput
-        style={styles.input}
-        value={paciente}
-        onChangeText={setPaciente}
-        placeholder="1"
-        keyboardType="numeric"
-      />
-
-      <Text style={styles.label}>Título</Text>
-
-      <TextInput
-        style={styles.input}
-        value={titulo}
-        onChangeText={setTitulo}
-        placeholder="Título da notificação"
-      />
-
-      <Text style={styles.label}>Mensagem</Text>
-
-      <TextInput
-        style={styles.input}
-        value={mensagem}
-        onChangeText={setMensagem}
-        placeholder="Mensagem"
-        multiline
-        numberOfLines={4}
-      />
-
-      <Text style={styles.label}>
-        Tipo (lembrete, alerta ou informativo)
-      </Text>
-
-      <TextInput
-        style={styles.input}
-        value={tipo}
-        onChangeText={setTipo}
-        placeholder="lembrete"
-      />
-
-      <TouchableOpacity
-        style={styles.btnSalvar}
-        onPress={salvar}
-      >
-
-        <Text style={styles.btnTexto}>
-          {editando ? 'Atualizar' : 'Cadastrar'}
-        </Text>
-
+      <TouchableOpacity style={[formStyles.btnSalvar, { backgroundColor: cores.roxo }]} onPress={salvar}>
+        <Text style={formStyles.btnTexto}>{editando ? 'Atualizar' : 'Cadastrar'}</Text>
       </TouchableOpacity>
-
     </ScrollView>
-
   );
-
 }
-
-const styles = StyleSheet.create({
-
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: '#f5f5f5'
-  },
-
-  label: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginTop: 12,
-    marginBottom: 4,
-    color: '#333'
-  },
-
-  input: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16
-  },
-
-  btnSalvar: {
-    backgroundColor: '#6C3483',
-    padding: 14,
-    borderRadius: 8,
-    marginTop: 20,
-    marginBottom: 40,
-    alignItems: 'center'
-  },
-
-  btnTexto: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16
-  }
-
-});
