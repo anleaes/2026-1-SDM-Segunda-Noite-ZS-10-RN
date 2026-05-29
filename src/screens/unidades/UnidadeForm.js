@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+import { TouchableOpacity, Text, ScrollView, Alert } from 'react-native';
 import api from '../../services/api';
+import CampoTexto from '../../components/CampoTexto';
+import { formStyles } from '../../components/formStyles';
 
 export default function UnidadeForm({ route, navigation }) {
   const editando = route.params?.unidade;
@@ -9,6 +11,7 @@ export default function UnidadeForm({ route, navigation }) {
   const [bairro, setBairro] = useState('');
   const [telefone, setTelefone] = useState('');
   const [horario, setHorario] = useState('');
+  const [erros, setErros] = useState({});
 
   useEffect(() => {
     if (editando) {
@@ -21,32 +24,18 @@ export default function UnidadeForm({ route, navigation }) {
   }, []);
 
   const validar = () => {
-    if (!nome.trim()) {
-      Alert.alert('Campo obrigatório', 'O campo "Nome" é obrigatório.');
-      return false;
-    }
-    if (!endereco.trim()) {
-      Alert.alert('Campo obrigatório', 'O campo "Endereço" é obrigatório.');
-      return false;
-    }
-    if (!bairro.trim()) {
-      Alert.alert('Campo obrigatório', 'O campo "Bairro" é obrigatório.');
-      return false;
-    }
-    if (!telefone.trim()) {
-      Alert.alert('Campo obrigatório', 'O campo "Telefone" é obrigatório.');
-      return false;
-    }
-    if (!horario.trim()) {
-      Alert.alert('Campo obrigatório', 'O campo "Horário de Funcionamento" é obrigatório.');
-      return false;
-    }
-    return true;
+    const e = {};
+    if (!nome.trim()) e.nome = 'Informe o nome da unidade.';
+    if (!endereco.trim()) e.endereco = 'Informe o endereço.';
+    if (!bairro.trim()) e.bairro = 'Informe o bairro.';
+    if (!telefone.trim()) e.telefone = 'Informe um telefone para contato.';
+    if (!horario.trim()) e.horario = 'Informe o horário de funcionamento.';
+    setErros(e);
+    return Object.keys(e).length === 0;
   };
 
   const salvar = async () => {
     if (!validar()) return;
-
     const dados = { nome, endereco, bairro, telefone, horario_funcionamento: horario, ativa: true };
     try {
       if (editando) {
@@ -57,8 +46,7 @@ export default function UnidadeForm({ route, navigation }) {
       navigation.goBack();
     } catch (err) {
       if (err.response?.data) {
-        const erros = err.response.data;
-        const mensagens = Object.entries(erros)
+        const mensagens = Object.entries(err.response.data)
           .map(([campo, msgs]) => `${campo}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
           .join('\n');
         Alert.alert('Erro ao salvar', mensagens);
@@ -69,33 +57,16 @@ export default function UnidadeForm({ route, navigation }) {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.label}>Nome *</Text>
-      <TextInput style={styles.input} value={nome} onChangeText={setNome} placeholder="Nome da unidade" />
+    <ScrollView style={formStyles.container}>
+      <CampoTexto label="Nome *" value={nome} onChangeText={setNome} placeholder="Nome da unidade" erro={erros.nome} />
+      <CampoTexto label="Endereço *" value={endereco} onChangeText={setEndereco} placeholder="Rua, número" erro={erros.endereco} />
+      <CampoTexto label="Bairro *" value={bairro} onChangeText={setBairro} placeholder="Nome do bairro" erro={erros.bairro} />
+      <CampoTexto label="Telefone *" value={telefone} onChangeText={setTelefone} keyboardType="phone-pad" placeholder="(00) 0000-0000" erro={erros.telefone} />
+      <CampoTexto label="Horário de Funcionamento *" value={horario} onChangeText={setHorario} placeholder="08:00 - 17:00" erro={erros.horario} />
 
-      <Text style={styles.label}>Endereço *</Text>
-      <TextInput style={styles.input} value={endereco} onChangeText={setEndereco} placeholder="Rua, número" />
-
-      <Text style={styles.label}>Bairro *</Text>
-      <TextInput style={styles.input} value={bairro} onChangeText={setBairro} placeholder="Nome do bairro" />
-
-      <Text style={styles.label}>Telefone *</Text>
-      <TextInput style={styles.input} value={telefone} onChangeText={setTelefone} placeholder="(00) 0000-0000" />
-
-      <Text style={styles.label}>Horário de Funcionamento *</Text>
-      <TextInput style={styles.input} value={horario} onChangeText={setHorario} placeholder="08:00 - 17:00" />
-
-      <TouchableOpacity style={styles.btnSalvar} onPress={salvar}>
-        <Text style={styles.btnTexto}>{editando ? 'Atualizar' : 'Cadastrar'}</Text>
+      <TouchableOpacity style={formStyles.btnSalvar} onPress={salvar}>
+        <Text style={formStyles.btnTexto}>{editando ? 'Atualizar' : 'Cadastrar'}</Text>
       </TouchableOpacity>
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#f5f5f5' },
-  label: { fontSize: 14, fontWeight: 'bold', marginTop: 12, marginBottom: 4, color: '#333' },
-  input: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 16 },
-  btnSalvar: { backgroundColor: '#1E8449', padding: 14, borderRadius: 8, marginTop: 20, alignItems: 'center', marginBottom: 40 },
-  btnTexto: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-});
