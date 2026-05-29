@@ -20,35 +20,69 @@ export default function UnidadeForm({ route, navigation }) {
     }
   }, []);
 
+  const validar = () => {
+    if (!nome.trim()) {
+      Alert.alert('Campo obrigatório', 'O campo "Nome" é obrigatório.');
+      return false;
+    }
+    if (!endereco.trim()) {
+      Alert.alert('Campo obrigatório', 'O campo "Endereço" é obrigatório.');
+      return false;
+    }
+    if (!bairro.trim()) {
+      Alert.alert('Campo obrigatório', 'O campo "Bairro" é obrigatório.');
+      return false;
+    }
+    if (!telefone.trim()) {
+      Alert.alert('Campo obrigatório', 'O campo "Telefone" é obrigatório.');
+      return false;
+    }
+    if (!horario.trim()) {
+      Alert.alert('Campo obrigatório', 'O campo "Horário de Funcionamento" é obrigatório.');
+      return false;
+    }
+    return true;
+  };
+
   const salvar = async () => {
+    if (!validar()) return;
+
     const dados = { nome, endereco, bairro, telefone, horario_funcionamento: horario, ativa: true };
     try {
       if (editando) {
-        await api.put('/unidades/unidades/' + editando.id + '/', dados);
+        await api.put('/unidades/' + editando.id + '/', dados);
       } else {
-        await api.post('/unidades/unidades/', dados);
+        await api.post('/unidades/', dados);
       }
       navigation.goBack();
     } catch (err) {
-      Alert.alert('Erro', 'Verifique os campos e tente novamente');
+      if (err.response?.data) {
+        const erros = err.response.data;
+        const mensagens = Object.entries(erros)
+          .map(([campo, msgs]) => `${campo}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+          .join('\n');
+        Alert.alert('Erro ao salvar', mensagens);
+      } else {
+        Alert.alert('Erro', 'Não foi possível salvar. Verifique sua conexão.');
+      }
     }
   };
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.label}>Nome</Text>
-      <TextInput style={styles.input} value={nome} onChangeText={setNome} />
+      <Text style={styles.label}>Nome *</Text>
+      <TextInput style={styles.input} value={nome} onChangeText={setNome} placeholder="Nome da unidade" />
 
-      <Text style={styles.label}>Endereco</Text>
-      <TextInput style={styles.input} value={endereco} onChangeText={setEndereco} />
+      <Text style={styles.label}>Endereço *</Text>
+      <TextInput style={styles.input} value={endereco} onChangeText={setEndereco} placeholder="Rua, número" />
 
-      <Text style={styles.label}>Bairro</Text>
-      <TextInput style={styles.input} value={bairro} onChangeText={setBairro} />
+      <Text style={styles.label}>Bairro *</Text>
+      <TextInput style={styles.input} value={bairro} onChangeText={setBairro} placeholder="Nome do bairro" />
 
-      <Text style={styles.label}>Telefone</Text>
-      <TextInput style={styles.input} value={telefone} onChangeText={setTelefone} />
+      <Text style={styles.label}>Telefone *</Text>
+      <TextInput style={styles.input} value={telefone} onChangeText={setTelefone} placeholder="(00) 0000-0000" />
 
-      <Text style={styles.label}>Horario de Funcionamento</Text>
+      <Text style={styles.label}>Horário de Funcionamento *</Text>
       <TextInput style={styles.input} value={horario} onChangeText={setHorario} placeholder="08:00 - 17:00" />
 
       <TouchableOpacity style={styles.btnSalvar} onPress={salvar}>

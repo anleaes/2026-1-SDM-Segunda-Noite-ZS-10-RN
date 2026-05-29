@@ -8,7 +8,7 @@ export default function AtendimentoList({ navigation }) {
 
   const carregar = async () => {
     try {
-      const res = await api.get('/atendimentos/atendimentos/');
+      const res = await api.get('/atendimentos/');
       setAtendimentos(res.data);
     } catch (err) {
       Alert.alert('Erro', 'Não foi possível carregar os atendimentos.');
@@ -21,7 +21,7 @@ export default function AtendimentoList({ navigation }) {
     Alert.alert('Confirmar', 'Deseja excluir este atendimento?', [
       { text: 'Cancelar' },
       { text: 'Excluir', onPress: async () => {
-          await api.delete(`/atendimentos/atendimentos/${id}/`);
+          await api.delete(`/atendimentos/${id}/`);
           carregar();
         }
       }

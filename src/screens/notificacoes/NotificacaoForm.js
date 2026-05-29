@@ -48,14 +48,14 @@ export default function NotificacaoForm({ route, navigation }) {
       if (editando) {
 
         await api.put(
-          `/notificacoes/notificacoes/${editando.id}/`,
+          `/notificacoes/${editando.id}/`,
           dados
         );
 
       } else {
 
         await api.post(
-          '/notificacoes/notificacoes/',
+          '/notificacoes/',
           dados
         );
 

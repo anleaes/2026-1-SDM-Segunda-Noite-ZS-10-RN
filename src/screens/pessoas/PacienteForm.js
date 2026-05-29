@@ -20,7 +20,43 @@ export default function PacienteForm({ route, navigation }) {
     }
   }, []);
 
+  const validar = () => {
+    if (!nome.trim()) {
+      Alert.alert('Campo obrigatório', 'O campo "Nome" é obrigatório.');
+      return false;
+    }
+    if (!email.trim()) {
+      Alert.alert('Campo obrigatório', 'O campo "Email" é obrigatório.');
+      return false;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('Email inválido', 'Informe um email válido. Ex: nome@email.com');
+      return false;
+    }
+    if (!telefone.trim()) {
+      Alert.alert('Campo obrigatório', 'O campo "Telefone" é obrigatório.');
+      return false;
+    }
+    if (!cpf.trim()) {
+      Alert.alert('Campo obrigatório', 'O campo "CPF" é obrigatório.');
+      return false;
+    }
+    if (!dataNascimento.trim()) {
+      Alert.alert('Campo obrigatório', 'O campo "Data de Nascimento" é obrigatório.');
+      return false;
+    }
+    const dataRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dataRegex.test(dataNascimento)) {
+      Alert.alert('Data inválida', 'A data deve estar no formato AAAA-MM-DD. Ex: 2000-01-15');
+      return false;
+    }
+    return true;
+  };
+
   const salvar = async () => {
+    if (!validar()) return;
+
     const dados = { nome, email, telefone, cpf, data_nascimento: dataNascimento, ativo: true };
     try {
       if (editando) {
@@ -31,28 +67,33 @@ export default function PacienteForm({ route, navigation }) {
       navigation.goBack();
     } catch (err) {
       console.error('Erro na API: ', err.response?.data || err.message);
-      const detalhes = err.response?.data
-        ? JSON.stringify(err.response.data)
-        : err.message;
-      Alert.alert('Erro ao salvar', detalhes);
+      if (err.response?.data) {
+        const erros = err.response.data;
+        const mensagens = Object.entries(erros)
+          .map(([campo, msgs]) => `${campo}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+          .join('\n');
+        Alert.alert('Erro ao salvar', mensagens);
+      } else {
+        Alert.alert('Erro', 'Não foi possível salvar. Verifique sua conexão.');
+      }
     }
   };
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.label}>Nome</Text>
-      <TextInput style={styles.input} value={nome} onChangeText={setNome} />
+      <Text style={styles.label}>Nome *</Text>
+      <TextInput style={styles.input} value={nome} onChangeText={setNome} placeholder="Nome completo" />
 
-      <Text style={styles.label}>Email</Text>
-      <TextInput style={styles.input} value={email} onChangeText={setEmail} keyboardType="email-address" />
+      <Text style={styles.label}>Email *</Text>
+      <TextInput style={styles.input} value={email} onChangeText={setEmail} keyboardType="email-address" placeholder="nome@email.com" />
 
-      <Text style={styles.label}>Telefone</Text>
-      <TextInput style={styles.input} value={telefone} onChangeText={setTelefone} />
+      <Text style={styles.label}>Telefone *</Text>
+      <TextInput style={styles.input} value={telefone} onChangeText={setTelefone} placeholder="(00) 00000-0000" />
 
-      <Text style={styles.label}>CPF</Text>
-      <TextInput style={styles.input} value={cpf} onChangeText={setCpf} />
+      <Text style={styles.label}>CPF *</Text>
+      <TextInput style={styles.input} value={cpf} onChangeText={setCpf} placeholder="000.000.000-00" />
 
-      <Text style={styles.label}>Data Nascimento (AAAA-MM-DD)</Text>
+      <Text style={styles.label}>Data Nascimento (AAAA-MM-DD) *</Text>
       <TextInput style={styles.input} value={dataNascimento} onChangeText={setDataNascimento} placeholder="2000-01-15" />
 
       <TouchableOpacity style={styles.btnSalvar} onPress={salvar}>

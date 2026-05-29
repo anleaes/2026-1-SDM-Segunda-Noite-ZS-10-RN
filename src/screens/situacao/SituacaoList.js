@@ -33,7 +33,7 @@ export default function SituacaoList({ navigation }) {
 
     try {
 
-      const res = await api.get('/situacao/situacao/');
+      const res = await api.get('/situacao/');
 
       setSituacoes(res.data);
 
@@ -69,7 +69,7 @@ export default function SituacaoList({ navigation }) {
 
             try {
 
-              await api.delete(`/situacao/situacao/${id}/`);
+              await api.delete(`/situacao/${id}/`);
 
               carregar();
 

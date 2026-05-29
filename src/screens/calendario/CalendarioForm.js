@@ -34,9 +34,9 @@ export default function CalendarioForm({ route, navigation }) {
 
     try {
       if (editando) {
-        await api.put(`/calendario/calendarios/${editando.id}/`, dados);
+        await api.put(`/calendario/${editando.id}/`, dados);
       } else {
-        await api.post('/calendario/calendarios/', dados);
+        await api.post('/calendario/', dados);
       }
       navigation.goBack();
     } catch (err) {

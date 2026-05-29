@@ -31,9 +31,9 @@ export default function CampanhaForm({ route, navigation }) {
     const dados = { nome, descricao, data_inicio: dataInicio, data_fim: dataFim, publico_alvo: publicoAlvo, ativa };
     try {
       if (editando) {
-        await api.put(`/campanhas/campanhas/${editando.id}/`, dados);
+        await api.put(`/campanhas/${editando.id}/`, dados);
       } else {
-        await api.post('/campanhas/campanhas/', dados);
+        await api.post('/campanhas/', dados);
       }
       navigation.goBack();
     } catch (err) {
