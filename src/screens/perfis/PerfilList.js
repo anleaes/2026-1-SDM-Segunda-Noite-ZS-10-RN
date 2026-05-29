@@ -8,7 +8,7 @@ export default function PerfilList({ navigation }) {
 
   const carregar = async () => {
     try {
-      const res = await api.get('/perfis/perfis/');
+      const res = await api.get('/perfis/');
       setPerfis(res.data);
     } catch (err) {
       Alert.alert('Erro', 'Nao foi possivel carregar perfis');
@@ -21,7 +21,7 @@ export default function PerfilList({ navigation }) {
     Alert.alert('Confirmar', 'Deseja excluir este perfil?', [
       { text: 'Cancelar' },
       { text: 'Excluir', onPress: async () => {
-        await api.delete('/perfis/perfis/' + id + '/');
+        await api.delete('/perfis/' + id + '/');
         carregar();
       }}
     ]);

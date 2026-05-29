@@ -22,7 +22,42 @@ export default function ProfissionalForm({ route, navigation }) {
     }
   }, []);
 
+  const validar = () => {
+    if (!nome.trim()) {
+      Alert.alert('Campo obrigatório', 'O campo "Nome" é obrigatório.');
+      return false;
+    }
+    if (!email.trim()) {
+      Alert.alert('Campo obrigatório', 'O campo "Email" é obrigatório.');
+      return false;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('Email inválido', 'Informe um email válido. Ex: nome@email.com');
+      return false;
+    }
+    if (!telefone.trim()) {
+      Alert.alert('Campo obrigatório', 'O campo "Telefone" é obrigatório.');
+      return false;
+    }
+    if (!registroProfissional.trim()) {
+      Alert.alert('Campo obrigatório', 'O campo "Registro Profissional" é obrigatório.');
+      return false;
+    }
+    if (!cargo.trim()) {
+      Alert.alert('Campo obrigatório', 'O campo "Cargo" é obrigatório.');
+      return false;
+    }
+    if (unidadeSaude.trim() && isNaN(parseInt(unidadeSaude))) {
+      Alert.alert('Valor inválido', 'O campo "ID da Unidade de Saúde" deve ser um número inteiro.');
+      return false;
+    }
+    return true;
+  };
+
   const salvar = async () => {
+    if (!validar()) return;
+
     const dados = {
       nome, email, telefone,
       registro_profissional: registroProfissional,
@@ -38,29 +73,37 @@ export default function ProfissionalForm({ route, navigation }) {
       }
       navigation.goBack();
     } catch (err) {
-      Alert.alert('Erro', 'Verifique os campos e tente novamente');
+      if (err.response?.data) {
+        const erros = err.response.data;
+        const mensagens = Object.entries(erros)
+          .map(([campo, msgs]) => `${campo}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+          .join('\n');
+        Alert.alert('Erro ao salvar', mensagens);
+      } else {
+        Alert.alert('Erro', 'Não foi possível salvar. Verifique sua conexão.');
+      }
     }
   };
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.label}>Nome</Text>
-      <TextInput style={styles.input} value={nome} onChangeText={setNome} />
+      <Text style={styles.label}>Nome *</Text>
+      <TextInput style={styles.input} value={nome} onChangeText={setNome} placeholder="Nome completo" />
 
-      <Text style={styles.label}>Email</Text>
-      <TextInput style={styles.input} value={email} onChangeText={setEmail} keyboardType="email-address" />
+      <Text style={styles.label}>Email *</Text>
+      <TextInput style={styles.input} value={email} onChangeText={setEmail} keyboardType="email-address" placeholder="nome@email.com" />
 
-      <Text style={styles.label}>Telefone</Text>
-      <TextInput style={styles.input} value={telefone} onChangeText={setTelefone} />
+      <Text style={styles.label}>Telefone *</Text>
+      <TextInput style={styles.input} value={telefone} onChangeText={setTelefone} placeholder="(00) 00000-0000" />
 
-      <Text style={styles.label}>Registro Profissional</Text>
-      <TextInput style={styles.input} value={registroProfissional} onChangeText={setRegistroProfissional} />
+      <Text style={styles.label}>Registro Profissional *</Text>
+      <TextInput style={styles.input} value={registroProfissional} onChangeText={setRegistroProfissional} placeholder="CRM/COREN" />
 
-      <Text style={styles.label}>Cargo</Text>
-      <TextInput style={styles.input} value={cargo} onChangeText={setCargo} />
+      <Text style={styles.label}>Cargo *</Text>
+      <TextInput style={styles.input} value={cargo} onChangeText={setCargo} placeholder="Enfermeiro, Médico..." />
 
-      <Text style={styles.label}>ID da Unidade de Saude</Text>
-      <TextInput style={styles.input} value={unidadeSaude} onChangeText={setUnidadeSaude} keyboardType="numeric" />
+      <Text style={styles.label}>ID da Unidade de Saúde (número)</Text>
+      <TextInput style={styles.input} value={unidadeSaude} onChangeText={setUnidadeSaude} keyboardType="numeric" placeholder="Ex: 1" />
 
       <TouchableOpacity style={styles.btnSalvar} onPress={salvar}>
         <Text style={styles.btnTexto}>{editando ? 'Atualizar' : 'Cadastrar'}</Text>

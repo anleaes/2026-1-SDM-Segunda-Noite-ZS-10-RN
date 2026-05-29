@@ -30,9 +30,9 @@ export default function PerfilForm({ route, navigation }) {
     };
     try {
       if (editando) {
-        await api.put('/perfis/perfis/' + editando.id + '/', dados);
+        await api.put('/perfis/' + editando.id + '/', dados);
       } else {
-        await api.post('/perfis/perfis/', dados);
+        await api.post('/perfis/', dados);
       }
       navigation.goBack();
     } catch (err) {

@@ -8,7 +8,7 @@ export default function UnidadeList({ navigation }) {
 
   const carregar = async () => {
     try {
-      const res = await api.get('/unidades/unidades/');
+      const res = await api.get('/unidades/');
       setUnidades(res.data);
     } catch (err) {
       Alert.alert('Erro', 'Nao foi possivel carregar unidades');
@@ -21,7 +21,7 @@ export default function UnidadeList({ navigation }) {
     Alert.alert('Confirmar', 'Deseja excluir esta unidade?', [
       { text: 'Cancelar' },
       { text: 'Excluir', onPress: async () => {
-        await api.delete('/unidades/unidades/' + id + '/');
+        await api.delete('/unidades/' + id + '/');
         carregar();
       }}
     ]);

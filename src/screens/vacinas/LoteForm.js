@@ -20,7 +20,50 @@ export default function LoteForm({ route, navigation }) {
     }
   }, []);
 
+  const validar = () => {
+    if (!vacina.trim()) {
+      Alert.alert('Campo obrigatório', 'O campo "ID da Vacina" é obrigatório.');
+      return false;
+    }
+    if (isNaN(parseInt(vacina))) {
+      Alert.alert('Valor inválido', '"ID da Vacina" deve ser um número inteiro. Ex: 1');
+      return false;
+    }
+    if (!unidadeSaude.trim()) {
+      Alert.alert('Campo obrigatório', 'O campo "ID da Unidade de Saúde" é obrigatório.');
+      return false;
+    }
+    if (isNaN(parseInt(unidadeSaude))) {
+      Alert.alert('Valor inválido', '"ID da Unidade de Saúde" deve ser um número inteiro. Ex: 1');
+      return false;
+    }
+    if (!numeroLote.trim()) {
+      Alert.alert('Campo obrigatório', 'O campo "Número do Lote" é obrigatório.');
+      return false;
+    }
+    if (!dataValidade.trim()) {
+      Alert.alert('Campo obrigatório', 'O campo "Data de Validade" é obrigatório.');
+      return false;
+    }
+    const dataRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dataRegex.test(dataValidade)) {
+      Alert.alert('Data inválida', 'A data deve estar no formato AAAA-MM-DD. Ex: 2027-12-31');
+      return false;
+    }
+    if (!quantidadeDisponivel.trim()) {
+      Alert.alert('Campo obrigatório', 'O campo "Quantidade Disponível" é obrigatório.');
+      return false;
+    }
+    if (isNaN(parseInt(quantidadeDisponivel)) || parseInt(quantidadeDisponivel) < 0) {
+      Alert.alert('Valor inválido', '"Quantidade Disponível" deve ser um número inteiro positivo.');
+      return false;
+    }
+    return true;
+  };
+
   const salvar = async () => {
+    if (!validar()) return;
+
     const dados = {
       vacina: parseInt(vacina),
       unidade_saude: parseInt(unidadeSaude),
@@ -36,26 +79,34 @@ export default function LoteForm({ route, navigation }) {
       }
       navigation.goBack();
     } catch (err) {
-      Alert.alert('Erro', 'Verifique os campos e tente novamente');
+      if (err.response?.data) {
+        const erros = err.response.data;
+        const mensagens = Object.entries(erros)
+          .map(([campo, msgs]) => `${campo}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+          .join('\n');
+        Alert.alert('Erro ao salvar', mensagens);
+      } else {
+        Alert.alert('Erro', 'Não foi possível salvar. Verifique sua conexão.');
+      }
     }
   };
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.label}>ID da Vacina</Text>
-      <TextInput style={styles.input} value={vacina} onChangeText={setVacina} keyboardType="numeric" />
+      <Text style={styles.label}>ID da Vacina * (número)</Text>
+      <TextInput style={styles.input} value={vacina} onChangeText={setVacina} keyboardType="numeric" placeholder="Ex: 1" />
 
-      <Text style={styles.label}>ID da Unidade de Saude</Text>
-      <TextInput style={styles.input} value={unidadeSaude} onChangeText={setUnidadeSaude} keyboardType="numeric" />
+      <Text style={styles.label}>ID da Unidade de Saúde * (número)</Text>
+      <TextInput style={styles.input} value={unidadeSaude} onChangeText={setUnidadeSaude} keyboardType="numeric" placeholder="Ex: 1" />
 
-      <Text style={styles.label}>Numero do Lote</Text>
-      <TextInput style={styles.input} value={numeroLote} onChangeText={setNumeroLote} />
+      <Text style={styles.label}>Número do Lote *</Text>
+      <TextInput style={styles.input} value={numeroLote} onChangeText={setNumeroLote} placeholder="Ex: LOTE-2026-001" />
 
-      <Text style={styles.label}>Data de Validade (AAAA-MM-DD)</Text>
+      <Text style={styles.label}>Data de Validade (AAAA-MM-DD) *</Text>
       <TextInput style={styles.input} value={dataValidade} onChangeText={setDataValidade} placeholder="2027-12-31" />
 
-      <Text style={styles.label}>Quantidade Disponivel</Text>
-      <TextInput style={styles.input} value={quantidadeDisponivel} onChangeText={setQuantidadeDisponivel} keyboardType="numeric" />
+      <Text style={styles.label}>Quantidade Disponível * (número)</Text>
+      <TextInput style={styles.input} value={quantidadeDisponivel} onChangeText={setQuantidadeDisponivel} keyboardType="numeric" placeholder="Ex: 100" />
 
       <TouchableOpacity style={styles.btnSalvar} onPress={salvar}>
         <Text style={styles.btnTexto}>{editando ? 'Atualizar' : 'Cadastrar'}</Text>

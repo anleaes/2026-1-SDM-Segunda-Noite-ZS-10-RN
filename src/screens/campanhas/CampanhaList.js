@@ -8,7 +8,7 @@ export default function CampanhaList({ navigation }) {
 
   const carregar = async () => {
     try {
-      const res = await api.get('/campanhas/campanhas/');
+      const res = await api.get('/campanhas/');
       setCampanhas(res.data);
     } catch (err) {
       Alert.alert('Erro', 'Não foi possível carregar campanhas');
@@ -23,7 +23,7 @@ export default function CampanhaList({ navigation }) {
       {
         text: 'Excluir', onPress: async () => {
           try {
-            await api.delete(`/campanhas/campanhas/${id}/`);
+             await api.delete(`/campanhas/${id}/`);
             carregar();
           } catch (err) {
             Alert.alert('Erro', 'Não foi possível excluir');

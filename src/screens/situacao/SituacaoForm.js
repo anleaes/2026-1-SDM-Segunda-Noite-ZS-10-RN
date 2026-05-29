@@ -71,14 +71,14 @@ export default function SituacaoForm({ route, navigation }) {
       if (editando) {
 
         await api.put(
-          `/situacao/situacao/${editando.id}/`,
+          `/situacao/${editando.id}/`,
           dados
         );
 
       } else {
 
         await api.post(
-          '/situacao/situacao/',
+          '/situacao/',
           dados
         );
 

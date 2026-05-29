@@ -8,7 +8,7 @@ export default function CalendarioList({ navigation }) {
 
   const carregar = async () => {
     try {
-      const res = await api.get('/calendario/calendarios/');
+      const res = await api.get('/calendario/');
       setCalendarios(res.data);
     } catch (err) {
       Alert.alert('Erro', 'Não foi possível carregar os calendários');
@@ -21,7 +21,7 @@ export default function CalendarioList({ navigation }) {
     Alert.alert('Confirmar', 'Deseja excluir esta regra do calendário?', [
       { text: 'Cancelar' },
       { text: 'Excluir', onPress: async () => {
-          await api.delete(`/calendario/calendarios/${id}/`);
+          await api.delete(`/calendario/${id}/`);
           carregar();
         }
       }

@@ -8,7 +8,7 @@ export default function VacinaList({ navigation }) {
 
   const carregar = async () => {
     try {
-      const res = await api.get('/vacinas/vacinas/');
+      const res = await api.get('/vacinas/');
       setVacinas(res.data);
     } catch (err) {
       Alert.alert('Erro', 'Nao foi possivel carregar vacinas');
@@ -21,7 +21,7 @@ export default function VacinaList({ navigation }) {
     Alert.alert('Confirmar', 'Deseja excluir esta vacina?', [
       { text: 'Cancelar' },
       { text: 'Excluir', onPress: async () => {
-        await api.delete('/vacinas/vacinas/' + id + '/');
+        await api.delete('/vacinas/' + id + '/');
         carregar();
       }}
     ]);

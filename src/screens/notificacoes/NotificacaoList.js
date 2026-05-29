@@ -11,7 +11,7 @@ export default function NotificacaoList({ navigation }) {
 
   const carregar = async () => {
     try {
-      const res = await api.get('/notificacoes/notificacoes/');
+      const res = await api.get('/notificacoes/');
       setNotificacoes(res.data);
     } catch (err) {
       Alert.alert('Erro', 'Não foi possível carregar notificações');
@@ -26,7 +26,7 @@ export default function NotificacaoList({ navigation }) {
       {
         text: 'Excluir', onPress: async () => {
           try {
-            await api.delete(`/notificacoes/notificacoes/${id}/`);
+            await api.delete(`/notificacoes/${id}/`);
             carregar();
           } catch (err) {
             Alert.alert('Erro', 'Não foi possível excluir');

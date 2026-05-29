@@ -34,9 +34,9 @@ export default function AtendimentoForm({ route, navigation }) {
 
     try {
       if (editando) {
-        await api.put(`/atendimentos/atendimentos/${editando.id}/`, dados);
+        await api.put(`/atendimentos/${editando.id}/`, dados);
       } else {
-        await api.post('/atendimentos/atendimentos/', dados);
+        await api.post('/atendimentos/', dados);
       }
       navigation.goBack();
     } catch (err) {

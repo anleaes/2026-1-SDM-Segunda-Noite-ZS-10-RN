@@ -20,7 +20,37 @@ export default function VacinaForm({ route, navigation }) {
     }
   }, []);
 
+  const validar = () => {
+    if (!nome.trim()) {
+      Alert.alert('Campo obrigatório', 'O campo "Nome" é obrigatório.');
+      return false;
+    }
+    if (!fabricante.trim()) {
+      Alert.alert('Campo obrigatório', 'O campo "Fabricante" é obrigatório.');
+      return false;
+    }
+    if (!doencaPrevenida.trim()) {
+      Alert.alert('Campo obrigatório', 'O campo "Doença Prevenida" é obrigatório.');
+      return false;
+    }
+    if (!quantidadeDoses.trim()) {
+      Alert.alert('Campo obrigatório', 'O campo "Quantidade de Doses" é obrigatório.');
+      return false;
+    }
+    if (isNaN(parseInt(quantidadeDoses)) || parseInt(quantidadeDoses) <= 0) {
+      Alert.alert('Valor inválido', '"Quantidade de Doses" deve ser um número inteiro maior que zero.');
+      return false;
+    }
+    if (intervaloDias.trim() && isNaN(parseInt(intervaloDias))) {
+      Alert.alert('Valor inválido', '"Intervalo entre Doses" deve ser um número inteiro.');
+      return false;
+    }
+    return true;
+  };
+
   const salvar = async () => {
+    if (!validar()) return;
+
     const dados = {
       nome, fabricante, doenca_prevenida: doencaPrevenida,
       quantidade_doses: parseInt(quantidadeDoses),
@@ -29,32 +59,40 @@ export default function VacinaForm({ route, navigation }) {
     };
     try {
       if (editando) {
-        await api.put('/vacinas/vacinas/' + editando.id + '/', dados);
+        await api.put('/vacinas/' + editando.id + '/', dados);
       } else {
-        await api.post('/vacinas/vacinas/', dados);
+        await api.post('/vacinas/', dados);
       }
       navigation.goBack();
     } catch (err) {
-      Alert.alert('Erro', 'Verifique os campos e tente novamente');
+      if (err.response?.data) {
+        const erros = err.response.data;
+        const mensagens = Object.entries(erros)
+          .map(([campo, msgs]) => `${campo}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+          .join('\n');
+        Alert.alert('Erro ao salvar', mensagens);
+      } else {
+        Alert.alert('Erro', 'Não foi possível salvar. Verifique sua conexão.');
+      }
     }
   };
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.label}>Nome</Text>
-      <TextInput style={styles.input} value={nome} onChangeText={setNome} />
+      <Text style={styles.label}>Nome *</Text>
+      <TextInput style={styles.input} value={nome} onChangeText={setNome} placeholder="Nome da vacina" />
 
-      <Text style={styles.label}>Fabricante</Text>
-      <TextInput style={styles.input} value={fabricante} onChangeText={setFabricante} />
+      <Text style={styles.label}>Fabricante *</Text>
+      <TextInput style={styles.input} value={fabricante} onChangeText={setFabricante} placeholder="Nome do fabricante" />
 
-      <Text style={styles.label}>Doenca Prevenida</Text>
-      <TextInput style={styles.input} value={doencaPrevenida} onChangeText={setDoencaPrevenida} />
+      <Text style={styles.label}>Doença Prevenida *</Text>
+      <TextInput style={styles.input} value={doencaPrevenida} onChangeText={setDoencaPrevenida} placeholder="Ex: Hepatite B" />
 
-      <Text style={styles.label}>Quantidade de Doses</Text>
-      <TextInput style={styles.input} value={quantidadeDoses} onChangeText={setQuantidadeDoses} keyboardType="numeric" />
+      <Text style={styles.label}>Quantidade de Doses * (número)</Text>
+      <TextInput style={styles.input} value={quantidadeDoses} onChangeText={setQuantidadeDoses} keyboardType="numeric" placeholder="Ex: 3" />
 
-      <Text style={styles.label}>Intervalo entre Doses (dias)</Text>
-      <TextInput style={styles.input} value={intervaloDias} onChangeText={setIntervaloDias} keyboardType="numeric" />
+      <Text style={styles.label}>Intervalo entre Doses em dias (número)</Text>
+      <TextInput style={styles.input} value={intervaloDias} onChangeText={setIntervaloDias} keyboardType="numeric" placeholder="Ex: 30" />
 
       <TouchableOpacity style={styles.btnSalvar} onPress={salvar}>
         <Text style={styles.btnTexto}>{editando ? 'Atualizar' : 'Cadastrar'}</Text>
