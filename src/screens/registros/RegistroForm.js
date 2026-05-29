@@ -1,46 +1,76 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+import { TouchableOpacity, Text, ScrollView, Alert } from 'react-native';
 import api from '../../services/api';
+import CampoTexto from '../../components/CampoTexto';
+import Seletor from '../../components/Seletor';
+import useColecao from '../../hooks/useColecao';
+import { formStyles } from '../../components/formStyles';
 
 export default function RegistroForm({ route, navigation }) {
   const editando = route.params?.registro;
-  const [paciente, setPaciente] = useState('');
-  const [vacina, setVacina] = useState('');
-  const [lote, setLote] = useState('');
-  const [profissional, setProfissional] = useState('');
-  const [unidadeSaude, setUnidadeSaude] = useState('');
-  const [atendimento, setAtendimento] = useState('');
+  const [paciente, setPaciente] = useState(null);
+  const [vacina, setVacina] = useState(null);
+  const [lote, setLote] = useState(null);
+  const [profissional, setProfissional] = useState(null);
+  const [unidadeSaude, setUnidadeSaude] = useState(null);
+  const [atendimento, setAtendimento] = useState(null);
   const [dataAplicacao, setDataAplicacao] = useState('');
   const [dose, setDose] = useState('');
   const [observacao, setObservacao] = useState('');
+  const [erros, setErros] = useState({});
+
+  const pacientes = useColecao('/pessoas/pacientes/', (p) => ({ valor: p.id, rotulo: p.nome }));
+  const vacinas = useColecao('/vacinas/', (v) => ({ valor: v.id, rotulo: v.nome }));
+  const lotes = useColecao('/vacinas/lotes/', (l) => ({ valor: l.id, rotulo: l.numero_lote }));
+  const profissionais = useColecao('/pessoas/profissionais/', (p) => ({ valor: p.id, rotulo: p.nome }));
+  const unidades = useColecao('/unidades/', (u) => ({ valor: u.id, rotulo: u.nome }));
+  const atendimentos = useColecao('/atendimentos/', (a) => ({
+    valor: a.id,
+    rotulo: `#${a.id} - ${(a.data_atendimento || '').slice(0, 10)} (${a.status})`,
+  }));
 
   useEffect(() => {
     if (editando) {
-      setPaciente(String(editando.paciente));
-      setVacina(String(editando.vacina));
-      setLote(String(editando.lote));
-      setProfissional(String(editando.profissional));
-      setUnidadeSaude(String(editando.unidade_saude));
-      setAtendimento(String(editando.atendimento));
+      setPaciente(editando.paciente);
+      setVacina(editando.vacina);
+      setLote(editando.lote);
+      setProfissional(editando.profissional);
+      setUnidadeSaude(editando.unidade_saude);
+      setAtendimento(editando.atendimento);
       setDataAplicacao(editando.data_aplicacao);
       setDose(editando.dose);
       setObservacao(editando.observacao || '');
     }
   }, []);
 
-  const salvar = async () => {
-    const dados = {
-      paciente: parseInt(paciente),
-      vacina: parseInt(vacina),
-      lote: parseInt(lote),
-      profissional: parseInt(profissional),
-      unidade_saude: parseInt(unidadeSaude),
-      atendimento: parseInt(atendimento),
-      data_aplicacao: dataAplicacao,
-      dose: dose,
-      observacao: observacao,
-    };
+  const validar = () => {
+    const e = {};
+    if (!paciente) e.paciente = 'Selecione o paciente.';
+    if (!vacina) e.vacina = 'Selecione a vacina.';
+    if (!lote) e.lote = 'Selecione o lote.';
+    if (!profissional) e.profissional = 'Selecione o profissional.';
+    if (!unidadeSaude) e.unidadeSaude = 'Selecione a unidade de saúde.';
+    if (!atendimento) e.atendimento = 'Selecione o atendimento.';
+    if (!dataAplicacao.trim()) e.dataAplicacao = 'Informe a data da aplicação.';
+    else if (!/^\d{4}-\d{2}-\d{2}$/.test(dataAplicacao)) e.dataAplicacao = 'Use o formato AAAA-MM-DD. Ex: 2026-06-15';
+    if (!dose.trim()) e.dose = 'Informe a dose. Ex: 1ª Dose, Reforço';
+    setErros(e);
+    return Object.keys(e).length === 0;
+  };
 
+  const salvar = async () => {
+    if (!validar()) return;
+    const dados = {
+      paciente,
+      vacina,
+      lote,
+      profissional,
+      unidade_saude: unidadeSaude,
+      atendimento,
+      data_aplicacao: dataAplicacao,
+      dose,
+      observacao,
+    };
     try {
       if (editando) {
         await api.put(`/registros/${editando.id}/`, dados);
@@ -49,50 +79,32 @@ export default function RegistroForm({ route, navigation }) {
       }
       navigation.goBack();
     } catch (err) {
-      Alert.alert('Erro', 'Verifique os dados informados.');
+      Alert.alert('Erro', 'Não foi possível salvar. Verifique os dados informados.');
     }
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.label}>ID do Paciente</Text>
-      <TextInput style={styles.input} value={paciente} onChangeText={setPaciente} keyboardType='numeric' />
+    <ScrollView style={formStyles.container}>
+      <Seletor label="Paciente *" valor={paciente} aoSelecionar={setPaciente} itens={pacientes.itens} carregando={pacientes.carregando} erro={erros.paciente}
+        mensagemVazio="Nenhum paciente cadastrado. Cadastre um paciente primeiro." />
+      <Seletor label="Vacina *" valor={vacina} aoSelecionar={setVacina} itens={vacinas.itens} carregando={vacinas.carregando} erro={erros.vacina}
+        mensagemVazio="Nenhuma vacina cadastrada. Cadastre uma vacina primeiro." />
+      <Seletor label="Lote *" valor={lote} aoSelecionar={setLote} itens={lotes.itens} carregando={lotes.carregando} erro={erros.lote}
+        mensagemVazio="Nenhum lote cadastrado. Cadastre um lote primeiro." />
+      <Seletor label="Profissional *" valor={profissional} aoSelecionar={setProfissional} itens={profissionais.itens} carregando={profissionais.carregando} erro={erros.profissional}
+        mensagemVazio="Nenhum profissional cadastrado. Cadastre um profissional primeiro." />
+      <Seletor label="Unidade de Saúde *" valor={unidadeSaude} aoSelecionar={setUnidadeSaude} itens={unidades.itens} carregando={unidades.carregando} erro={erros.unidadeSaude}
+        mensagemVazio="Nenhuma unidade cadastrada. Cadastre uma unidade primeiro." />
+      <Seletor label="Atendimento *" valor={atendimento} aoSelecionar={setAtendimento} itens={atendimentos.itens} carregando={atendimentos.carregando} erro={erros.atendimento}
+        mensagemVazio="Nenhum atendimento cadastrado. Cadastre um atendimento primeiro." />
 
-      <Text style={styles.label}>ID da Vacina</Text>
-      <TextInput style={styles.input} value={vacina} onChangeText={setVacina} keyboardType='numeric' />
+      <CampoTexto label="Data da Aplicação *" value={dataAplicacao} onChangeText={setDataAplicacao} placeholder="2026-06-15" ajuda="Formato: AAAA-MM-DD" erro={erros.dataAplicacao} />
+      <CampoTexto label="Dose *" value={dose} onChangeText={setDose} placeholder="Ex: 1ª Dose, Reforço" erro={erros.dose} />
+      <CampoTexto label="Observação" value={observacao} onChangeText={setObservacao} multiline />
 
-      <Text style={styles.label}>ID do Lote</Text>
-      <TextInput style={styles.input} value={lote} onChangeText={setLote} keyboardType='numeric' />
-
-      <Text style={styles.label}>ID do Profissional</Text>
-      <TextInput style={styles.input} value={profissional} onChangeText={setProfissional} keyboardType='numeric' />
-
-      <Text style={styles.label}>ID da Unidade de Saúde</Text>
-      <TextInput style={styles.input} value={unidadeSaude} onChangeText={setUnidadeSaude} keyboardType='numeric' />
-
-      <Text style={styles.label}>ID do Atendimento</Text>
-      <TextInput style={styles.input} value={atendimento} onChangeText={setAtendimento} keyboardType='numeric' />
-
-      <Text style={styles.label}>Data da Aplicação (AAAA-MM-DD)</Text>
-      <TextInput style={styles.input} value={dataAplicacao} onChangeText={setDataAplicacao} placeholder='Ex: 2026-06-15' />
-
-      <Text style={styles.label}>Dose (Ex: 1a Dose, Reforço)</Text>
-      <TextInput style={styles.input} value={dose} onChangeText={setDose} />
-
-      <Text style={styles.label}>Observação</Text>
-      <TextInput style={styles.input} value={observacao} onChangeText={setObservacao} multiline />
-
-      <TouchableOpacity style={styles.btnSalvar} onPress={salvar}>
-        <Text style={styles.btnTexto}>{editando ? 'Atualizar' : 'Cadastrar'}</Text>
+      <TouchableOpacity style={formStyles.btnSalvar} onPress={salvar}>
+        <Text style={formStyles.btnTexto}>{editando ? 'Atualizar' : 'Cadastrar'}</Text>
       </TouchableOpacity>
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#f5f5f5' },
-  label: { fontSize: 14, fontWeight: 'bold', marginTop: 12, marginBottom: 4, color: '#333' },
-  input: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 16 },
-  btnSalvar: { backgroundColor: '#1E8449', padding: 14, borderRadius: 8, marginTop: 24, alignItems: 'center', marginBottom: 40 },
-  btnTexto: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-});
