@@ -27,7 +27,7 @@ export default function AtendimentoForm({ route, navigation }) {
       paciente: parseInt(paciente),
       unidade_saude: parseInt(unidadeSaude),
       profissional: parseInt(profissional),
-      data_atendimento: dataAtendimento,
+      data_atendimento: dataAtendimento ? `${dataAtendimento}T00:00:00` : null,
       status: status,
       observacao: observacao,
     };
