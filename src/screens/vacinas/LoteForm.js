@@ -1,19 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+import { TouchableOpacity, Text, ScrollView, Alert } from 'react-native';
 import api from '../../services/api';
+import CampoTexto from '../../components/CampoTexto';
+import Seletor from '../../components/Seletor';
+import useColecao from '../../hooks/useColecao';
+import { formStyles } from '../../components/formStyles';
 
 export default function LoteForm({ route, navigation }) {
   const editando = route.params?.lote;
-  const [vacina, setVacina] = useState('');
-  const [unidadeSaude, setUnidadeSaude] = useState('');
+  const [vacina, setVacina] = useState(null);
+  const [unidadeSaude, setUnidadeSaude] = useState(null);
   const [numeroLote, setNumeroLote] = useState('');
   const [dataValidade, setDataValidade] = useState('');
   const [quantidadeDisponivel, setQuantidadeDisponivel] = useState('');
+  const [erros, setErros] = useState({});
+
+  const vacinas = useColecao('/vacinas/', (v) => ({ valor: v.id, rotulo: v.nome }));
+  const unidades = useColecao('/unidades/', (u) => ({ valor: u.id, rotulo: u.nome }));
 
   useEffect(() => {
     if (editando) {
-      setVacina(String(editando.vacina));
-      setUnidadeSaude(String(editando.unidade_saude));
+      setVacina(editando.vacina);
+      setUnidadeSaude(editando.unidade_saude);
       setNumeroLote(editando.numero_lote);
       setDataValidade(editando.data_validade);
       setQuantidadeDisponivel(String(editando.quantidade_disponivel));
@@ -21,52 +29,24 @@ export default function LoteForm({ route, navigation }) {
   }, []);
 
   const validar = () => {
-    if (!vacina.trim()) {
-      Alert.alert('Campo obrigatório', 'O campo "ID da Vacina" é obrigatório.');
-      return false;
-    }
-    if (isNaN(parseInt(vacina))) {
-      Alert.alert('Valor inválido', '"ID da Vacina" deve ser um número inteiro. Ex: 1');
-      return false;
-    }
-    if (!unidadeSaude.trim()) {
-      Alert.alert('Campo obrigatório', 'O campo "ID da Unidade de Saúde" é obrigatório.');
-      return false;
-    }
-    if (isNaN(parseInt(unidadeSaude))) {
-      Alert.alert('Valor inválido', '"ID da Unidade de Saúde" deve ser um número inteiro. Ex: 1');
-      return false;
-    }
-    if (!numeroLote.trim()) {
-      Alert.alert('Campo obrigatório', 'O campo "Número do Lote" é obrigatório.');
-      return false;
-    }
-    if (!dataValidade.trim()) {
-      Alert.alert('Campo obrigatório', 'O campo "Data de Validade" é obrigatório.');
-      return false;
-    }
-    const dataRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dataRegex.test(dataValidade)) {
-      Alert.alert('Data inválida', 'A data deve estar no formato AAAA-MM-DD. Ex: 2027-12-31');
-      return false;
-    }
-    if (!quantidadeDisponivel.trim()) {
-      Alert.alert('Campo obrigatório', 'O campo "Quantidade Disponível" é obrigatório.');
-      return false;
-    }
-    if (isNaN(parseInt(quantidadeDisponivel)) || parseInt(quantidadeDisponivel) < 0) {
-      Alert.alert('Valor inválido', '"Quantidade Disponível" deve ser um número inteiro positivo.');
-      return false;
-    }
-    return true;
+    const e = {};
+    if (!vacina) e.vacina = 'Selecione a vacina.';
+    if (!unidadeSaude) e.unidadeSaude = 'Selecione a unidade de saúde.';
+    if (!numeroLote.trim()) e.numeroLote = 'Informe o número do lote.';
+    if (!dataValidade.trim()) e.dataValidade = 'Informe a data de validade.';
+    else if (!/^\d{4}-\d{2}-\d{2}$/.test(dataValidade)) e.dataValidade = 'Use o formato AAAA-MM-DD. Ex: 2027-12-31';
+    if (!quantidadeDisponivel.trim()) e.quantidadeDisponivel = 'Informe a quantidade disponível.';
+    else if (isNaN(parseInt(quantidadeDisponivel)) || parseInt(quantidadeDisponivel) < 0)
+      e.quantidadeDisponivel = 'Deve ser um número inteiro igual ou maior que zero.';
+    setErros(e);
+    return Object.keys(e).length === 0;
   };
 
   const salvar = async () => {
     if (!validar()) return;
-
     const dados = {
-      vacina: parseInt(vacina),
-      unidade_saude: parseInt(unidadeSaude),
+      vacina,
+      unidade_saude: unidadeSaude,
       numero_lote: numeroLote,
       data_validade: dataValidade,
       quantidade_disponivel: parseInt(quantidadeDisponivel),
@@ -80,8 +60,7 @@ export default function LoteForm({ route, navigation }) {
       navigation.goBack();
     } catch (err) {
       if (err.response?.data) {
-        const erros = err.response.data;
-        const mensagens = Object.entries(erros)
+        const mensagens = Object.entries(err.response.data)
           .map(([campo, msgs]) => `${campo}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
           .join('\n');
         Alert.alert('Erro ao salvar', mensagens);
@@ -92,33 +71,19 @@ export default function LoteForm({ route, navigation }) {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.label}>ID da Vacina * (número)</Text>
-      <TextInput style={styles.input} value={vacina} onChangeText={setVacina} keyboardType="numeric" placeholder="Ex: 1" />
+    <ScrollView style={formStyles.container}>
+      <Seletor label="Vacina *" valor={vacina} aoSelecionar={setVacina} itens={vacinas.itens} carregando={vacinas.carregando} erro={erros.vacina}
+        mensagemVazio="Nenhuma vacina cadastrada. Cadastre uma vacina primeiro." />
+      <Seletor label="Unidade de Saúde *" valor={unidadeSaude} aoSelecionar={setUnidadeSaude} itens={unidades.itens} carregando={unidades.carregando} erro={erros.unidadeSaude}
+        mensagemVazio="Nenhuma unidade cadastrada. Cadastre uma unidade primeiro." />
 
-      <Text style={styles.label}>ID da Unidade de Saúde * (número)</Text>
-      <TextInput style={styles.input} value={unidadeSaude} onChangeText={setUnidadeSaude} keyboardType="numeric" placeholder="Ex: 1" />
+      <CampoTexto label="Número do Lote *" value={numeroLote} onChangeText={setNumeroLote} placeholder="Ex: LOTE-2026-001" erro={erros.numeroLote} />
+      <CampoTexto label="Data de Validade *" value={dataValidade} onChangeText={setDataValidade} placeholder="2027-12-31" ajuda="Formato: AAAA-MM-DD" erro={erros.dataValidade} />
+      <CampoTexto label="Quantidade Disponível *" value={quantidadeDisponivel} onChangeText={setQuantidadeDisponivel} keyboardType="numeric" placeholder="Ex: 100" erro={erros.quantidadeDisponivel} />
 
-      <Text style={styles.label}>Número do Lote *</Text>
-      <TextInput style={styles.input} value={numeroLote} onChangeText={setNumeroLote} placeholder="Ex: LOTE-2026-001" />
-
-      <Text style={styles.label}>Data de Validade (AAAA-MM-DD) *</Text>
-      <TextInput style={styles.input} value={dataValidade} onChangeText={setDataValidade} placeholder="2027-12-31" />
-
-      <Text style={styles.label}>Quantidade Disponível * (número)</Text>
-      <TextInput style={styles.input} value={quantidadeDisponivel} onChangeText={setQuantidadeDisponivel} keyboardType="numeric" placeholder="Ex: 100" />
-
-      <TouchableOpacity style={styles.btnSalvar} onPress={salvar}>
-        <Text style={styles.btnTexto}>{editando ? 'Atualizar' : 'Cadastrar'}</Text>
+      <TouchableOpacity style={formStyles.btnSalvar} onPress={salvar}>
+        <Text style={formStyles.btnTexto}>{editando ? 'Atualizar' : 'Cadastrar'}</Text>
       </TouchableOpacity>
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#f5f5f5' },
-  label: { fontSize: 14, fontWeight: 'bold', marginTop: 12, marginBottom: 4, color: '#333' },
-  input: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 16 },
-  btnSalvar: { backgroundColor: '#1E8449', padding: 14, borderRadius: 8, marginTop: 20, alignItems: 'center', marginBottom: 40 },
-  btnTexto: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-});
