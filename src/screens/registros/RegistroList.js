@@ -8,7 +8,7 @@ export default function RegistroList({ navigation }) {
 
   const carregar = async () => {
     try {
-      const res = await api.get('/registros/registros/');
+      const res = await api.get('/registros/registravacinacaos/');
       setRegistros(res.data);
     } catch (err) {
       Alert.alert('Erro', 'Não foi possível carregar os registros de vacinação.');
@@ -21,7 +21,7 @@ export default function RegistroList({ navigation }) {
     Alert.alert('Confirmar', 'Deseja excluir este registro de vacinação?', [
       { text: 'Cancelar' },
       { text: 'Excluir', onPress: async () => {
-          await api.delete(`/registros/registros/${id}/`);
+          await api.delete(`/registros/registravacinacaos/${id}/`);
           carregar();
         }
       }

@@ -43,9 +43,9 @@ export default function RegistroForm({ route, navigation }) {
 
     try {
       if (editando) {
-        await api.put(`/registros/registros/${editando.id}/`, dados);
+        await api.put(`/registros/registravacinacaos/${editando.id}/`, dados);
       } else {
-        await api.post('/registros/registros/', dados);
+        await api.post('/registros/registravacinacaos/', dados);
       }
       navigation.goBack();
     } catch (err) {
