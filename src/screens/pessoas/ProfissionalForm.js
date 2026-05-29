@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+import { TouchableOpacity, Text, ScrollView, Alert } from 'react-native';
 import api from '../../services/api';
+import CampoTexto from '../../components/CampoTexto';
+import Seletor from '../../components/Seletor';
+import useColecao from '../../hooks/useColecao';
+import { formStyles } from '../../components/formStyles';
 
 export default function ProfissionalForm({ route, navigation }) {
   const editando = route.params?.profissional;
@@ -9,7 +13,13 @@ export default function ProfissionalForm({ route, navigation }) {
   const [telefone, setTelefone] = useState('');
   const [registroProfissional, setRegistroProfissional] = useState('');
   const [cargo, setCargo] = useState('');
-  const [unidadeSaude, setUnidadeSaude] = useState('');
+  const [unidadeSaude, setUnidadeSaude] = useState(null);
+  const [erros, setErros] = useState({});
+
+  const { itens: unidades, carregando } = useColecao('/unidades/', (u) => ({
+    valor: u.id,
+    rotulo: u.nome,
+  }));
 
   useEffect(() => {
     if (editando) {
@@ -18,51 +28,31 @@ export default function ProfissionalForm({ route, navigation }) {
       setTelefone(editando.telefone);
       setRegistroProfissional(editando.registro_profissional);
       setCargo(editando.cargo);
-      setUnidadeSaude(editando.unidade_saude ? String(editando.unidade_saude) : '');
+      setUnidadeSaude(editando.unidade_saude ?? null);
     }
   }, []);
 
   const validar = () => {
-    if (!nome.trim()) {
-      Alert.alert('Campo obrigatório', 'O campo "Nome" é obrigatório.');
-      return false;
-    }
-    if (!email.trim()) {
-      Alert.alert('Campo obrigatório', 'O campo "Email" é obrigatório.');
-      return false;
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      Alert.alert('Email inválido', 'Informe um email válido. Ex: nome@email.com');
-      return false;
-    }
-    if (!telefone.trim()) {
-      Alert.alert('Campo obrigatório', 'O campo "Telefone" é obrigatório.');
-      return false;
-    }
-    if (!registroProfissional.trim()) {
-      Alert.alert('Campo obrigatório', 'O campo "Registro Profissional" é obrigatório.');
-      return false;
-    }
-    if (!cargo.trim()) {
-      Alert.alert('Campo obrigatório', 'O campo "Cargo" é obrigatório.');
-      return false;
-    }
-    if (unidadeSaude.trim() && isNaN(parseInt(unidadeSaude))) {
-      Alert.alert('Valor inválido', 'O campo "ID da Unidade de Saúde" deve ser um número inteiro.');
-      return false;
-    }
-    return true;
+    const e = {};
+    if (!nome.trim()) e.nome = 'Informe o nome completo do profissional.';
+    if (!email.trim()) e.email = 'Informe um email.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Email inválido. Ex: nome@email.com';
+    if (!telefone.trim()) e.telefone = 'Informe um telefone para contato.';
+    if (!registroProfissional.trim()) e.registroProfissional = 'Informe o registro (CRM/COREN).';
+    if (!cargo.trim()) e.cargo = 'Informe o cargo do profissional.';
+    setErros(e);
+    return Object.keys(e).length === 0;
   };
 
   const salvar = async () => {
     if (!validar()) return;
-
     const dados = {
-      nome, email, telefone,
+      nome,
+      email,
+      telefone,
       registro_profissional: registroProfissional,
       cargo,
-      unidade_saude: unidadeSaude ? parseInt(unidadeSaude) : null,
+      unidade_saude: unidadeSaude,
       ativo: true,
     };
     try {
@@ -74,8 +64,7 @@ export default function ProfissionalForm({ route, navigation }) {
       navigation.goBack();
     } catch (err) {
       if (err.response?.data) {
-        const erros = err.response.data;
-        const mensagens = Object.entries(erros)
+        const mensagens = Object.entries(err.response.data)
           .map(([campo, msgs]) => `${campo}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
           .join('\n');
         Alert.alert('Erro ao salvar', mensagens);
@@ -86,36 +75,26 @@ export default function ProfissionalForm({ route, navigation }) {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.label}>Nome *</Text>
-      <TextInput style={styles.input} value={nome} onChangeText={setNome} placeholder="Nome completo" />
+    <ScrollView style={formStyles.container}>
+      <CampoTexto label="Nome *" value={nome} onChangeText={setNome} placeholder="Nome completo" erro={erros.nome} />
+      <CampoTexto label="Email *" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" placeholder="nome@email.com" erro={erros.email} />
+      <CampoTexto label="Telefone *" value={telefone} onChangeText={setTelefone} keyboardType="phone-pad" placeholder="(00) 00000-0000" erro={erros.telefone} />
+      <CampoTexto label="Registro Profissional *" value={registroProfissional} onChangeText={setRegistroProfissional} placeholder="CRM/COREN" erro={erros.registroProfissional} />
+      <CampoTexto label="Cargo *" value={cargo} onChangeText={setCargo} placeholder="Enfermeiro, Médico..." erro={erros.cargo} />
 
-      <Text style={styles.label}>Email *</Text>
-      <TextInput style={styles.input} value={email} onChangeText={setEmail} keyboardType="email-address" placeholder="nome@email.com" />
+      <Seletor
+        label="Unidade de Saúde"
+        valor={unidadeSaude}
+        aoSelecionar={setUnidadeSaude}
+        itens={unidades}
+        carregando={carregando}
+        placeholder="Selecione a unidade (opcional)"
+        mensagemVazio="Nenhuma unidade cadastrada. Cadastre uma unidade primeiro para poder vinculá-la."
+      />
 
-      <Text style={styles.label}>Telefone *</Text>
-      <TextInput style={styles.input} value={telefone} onChangeText={setTelefone} placeholder="(00) 00000-0000" />
-
-      <Text style={styles.label}>Registro Profissional *</Text>
-      <TextInput style={styles.input} value={registroProfissional} onChangeText={setRegistroProfissional} placeholder="CRM/COREN" />
-
-      <Text style={styles.label}>Cargo *</Text>
-      <TextInput style={styles.input} value={cargo} onChangeText={setCargo} placeholder="Enfermeiro, Médico..." />
-
-      <Text style={styles.label}>ID da Unidade de Saúde (número)</Text>
-      <TextInput style={styles.input} value={unidadeSaude} onChangeText={setUnidadeSaude} keyboardType="numeric" placeholder="Ex: 1" />
-
-      <TouchableOpacity style={styles.btnSalvar} onPress={salvar}>
-        <Text style={styles.btnTexto}>{editando ? 'Atualizar' : 'Cadastrar'}</Text>
+      <TouchableOpacity style={formStyles.btnSalvar} onPress={salvar}>
+        <Text style={formStyles.btnTexto}>{editando ? 'Atualizar' : 'Cadastrar'}</Text>
       </TouchableOpacity>
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#f5f5f5' },
-  label: { fontSize: 14, fontWeight: 'bold', marginTop: 12, marginBottom: 4, color: '#333' },
-  input: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 16 },
-  btnSalvar: { backgroundColor: '#1E8449', padding: 14, borderRadius: 8, marginTop: 20, alignItems: 'center', marginBottom: 40 },
-  btnTexto: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-});
