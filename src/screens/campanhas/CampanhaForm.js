@@ -1,33 +1,45 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, Switch } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Switch } from 'react-native';
 import api from '../../services/api';
+import CampoTexto from '../../components/CampoTexto';
+import { formStyles, cores } from '../../components/formStyles';
 
 export default function CampanhaForm({ route, navigation }) {
   const editando = route.params?.campanha;
-
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
   const [publicoAlvo, setPublicoAlvo] = useState('');
   const [ativa, setAtiva] = useState(true);
+  const [erros, setErros] = useState({});
 
   useEffect(() => {
     if (editando) {
       setNome(editando.nome);
-      setDescricao(editando.descricao);
+      setDescricao(editando.descricao || '');
       setDataInicio(editando.data_inicio);
       setDataFim(editando.data_fim);
-      setPublicoAlvo(editando.publico_alvo);
+      setPublicoAlvo(editando.publico_alvo || '');
       setAtiva(editando.ativa);
     }
   }, []);
 
+  const validar = () => {
+    const e = {};
+    const dataRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!nome.trim()) e.nome = 'Informe o nome da campanha.';
+    if (!dataInicio.trim()) e.dataInicio = 'Informe a data de início.';
+    else if (!dataRegex.test(dataInicio)) e.dataInicio = 'Use o formato AAAA-MM-DD. Ex: 2026-01-01';
+    if (!dataFim.trim()) e.dataFim = 'Informe a data de fim.';
+    else if (!dataRegex.test(dataFim)) e.dataFim = 'Use o formato AAAA-MM-DD. Ex: 2026-12-31';
+    else if (dataRegex.test(dataInicio) && dataFim < dataInicio) e.dataFim = 'A data de fim deve ser posterior à data de início.';
+    setErros(e);
+    return Object.keys(e).length === 0;
+  };
+
   const salvar = async () => {
-    if (!nome || !dataInicio || !dataFim) {
-      Alert.alert('Atenção', 'Preencha nome, data de início e data de fim');
-      return;
-    }
+    if (!validar()) return;
     const dados = { nome, descricao, data_inicio: dataInicio, data_fim: dataFim, publico_alvo: publicoAlvo, ativa };
     try {
       if (editando) {
@@ -37,38 +49,30 @@ export default function CampanhaForm({ route, navigation }) {
       }
       navigation.goBack();
     } catch (err) {
-      Alert.alert('Erro', 'Verifique os campos e tente novamente');
+      Alert.alert('Erro', 'Não foi possível salvar. Verifique os campos e tente novamente.');
     }
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.label}>Nome *</Text>
-      <TextInput style={styles.input} value={nome} onChangeText={setNome} placeholder="Nome da campanha" />
-      <Text style={styles.label}>Descrição</Text>
-      <TextInput style={styles.input} value={descricao} onChangeText={setDescricao} multiline numberOfLines={3} placeholder="Descrição" />
-      <Text style={styles.label}>Data Início (AAAA-MM-DD) *</Text>
-      <TextInput style={styles.input} value={dataInicio} onChangeText={setDataInicio} placeholder="2026-01-01" />
-      <Text style={styles.label}>Data Fim (AAAA-MM-DD) *</Text>
-      <TextInput style={styles.input} value={dataFim} onChangeText={setDataFim} placeholder="2026-12-31" />
-      <Text style={styles.label}>Público Alvo</Text>
-      <TextInput style={styles.input} value={publicoAlvo} onChangeText={setPublicoAlvo} placeholder="Ex: Crianças de 0 a 5 anos" />
+    <ScrollView style={formStyles.container}>
+      <CampoTexto label="Nome *" value={nome} onChangeText={setNome} placeholder="Nome da campanha" erro={erros.nome} />
+      <CampoTexto label="Descrição" value={descricao} onChangeText={setDescricao} multiline numberOfLines={3} placeholder="Descrição" />
+      <CampoTexto label="Data Início *" value={dataInicio} onChangeText={setDataInicio} placeholder="2026-01-01" ajuda="Formato: AAAA-MM-DD" erro={erros.dataInicio} />
+      <CampoTexto label="Data Fim *" value={dataFim} onChangeText={setDataFim} placeholder="2026-12-31" ajuda="Formato: AAAA-MM-DD" erro={erros.dataFim} />
+      <CampoTexto label="Público Alvo" value={publicoAlvo} onChangeText={setPublicoAlvo} placeholder="Ex: Crianças de 0 a 5 anos" />
+
       <View style={styles.switchRow}>
-        <Text style={styles.label}>Ativa</Text>
-        <Switch value={ativa} onValueChange={setAtiva} trackColor={{ true: '#6C3483' }} />
+        <Text style={formStyles.label}>Ativa</Text>
+        <Switch value={ativa} onValueChange={setAtiva} trackColor={{ true: cores.roxo }} />
       </View>
-      <TouchableOpacity style={styles.btnSalvar} onPress={salvar}>
-        <Text style={styles.btnTexto}>{editando ? 'Atualizar' : 'Cadastrar'}</Text>
+
+      <TouchableOpacity style={[formStyles.btnSalvar, { backgroundColor: cores.roxo }]} onPress={salvar}>
+        <Text style={formStyles.btnTexto}>{editando ? 'Atualizar' : 'Cadastrar'}</Text>
       </TouchableOpacity>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#f5f5f5' },
-  label: { fontSize: 14, fontWeight: 'bold', marginTop: 12, marginBottom: 4, color: '#333' },
-  input: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 16 },
   switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 },
-  btnSalvar: { backgroundColor: '#6C3483', padding: 14, borderRadius: 8, marginTop: 20, marginBottom: 40, alignItems: 'center' },
-  btnTexto: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
 });
