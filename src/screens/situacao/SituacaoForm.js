@@ -59,13 +59,11 @@ export default function SituacaoForm({ route, navigation }) {
     }
 
     const dados = {
-
-      paciente,
-      vacina,
-      calendario_vacinal: calendarioVacinal,
+      paciente: parseInt(paciente),
+      vacina: parseInt(vacina),
+      calendario_vacinal: parseInt(calendarioVacinal),
       status,
       observacao
-
     };
 
     try {
