@@ -37,7 +37,7 @@ export default function NotificacaoForm({ route, navigation }) {
     }
 
     const dados = {
-      paciente,
+      paciente: parseInt(paciente),
       titulo,
       mensagem,
       tipo
