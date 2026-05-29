@@ -1,37 +1,64 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+import { TouchableOpacity, Text, ScrollView, Alert } from 'react-native';
 import api from '../../services/api';
+import CampoTexto from '../../components/CampoTexto';
+import Seletor from '../../components/Seletor';
+import useColecao from '../../hooks/useColecao';
+import { formStyles } from '../../components/formStyles';
+
+const STATUS = [
+  { valor: 'agendado', rotulo: 'Agendado' },
+  { valor: 'realizado', rotulo: 'Realizado' },
+  { valor: 'cancelado', rotulo: 'Cancelado' },
+];
 
 export default function AtendimentoForm({ route, navigation }) {
   const editando = route.params?.atendimento;
-  const [paciente, setPaciente] = useState('');
-  const [unidadeSaude, setUnidadeSaude] = useState('');
-  const [profissional, setProfissional] = useState('');
+  const [paciente, setPaciente] = useState(null);
+  const [unidadeSaude, setUnidadeSaude] = useState(null);
+  const [profissional, setProfissional] = useState(null);
   const [dataAtendimento, setDataAtendimento] = useState('');
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState(null);
   const [observacao, setObservacao] = useState('');
+  const [erros, setErros] = useState({});
+
+  const pacientes = useColecao('/pessoas/pacientes/', (p) => ({ valor: p.id, rotulo: p.nome }));
+  const unidades = useColecao('/unidades/', (u) => ({ valor: u.id, rotulo: u.nome }));
+  const profissionais = useColecao('/pessoas/profissionais/', (p) => ({ valor: p.id, rotulo: p.nome }));
 
   useEffect(() => {
     if (editando) {
-      setPaciente(String(editando.paciente));
-      setUnidadeSaude(String(editando.unidade_saude));
-      setProfissional(String(editando.profissional));
-      setDataAtendimento(editando.data_atendimento);
+      setPaciente(editando.paciente);
+      setUnidadeSaude(editando.unidade_saude);
+      setProfissional(editando.profissional);
+      setDataAtendimento((editando.data_atendimento || '').slice(0, 10));
       setStatus(editando.status);
       setObservacao(editando.observacao || '');
     }
   }, []);
 
-  const salvar = async () => {
-    const dados = {
-      paciente: parseInt(paciente),
-      unidade_saude: parseInt(unidadeSaude),
-      profissional: parseInt(profissional),
-      data_atendimento: dataAtendimento ? `${dataAtendimento}T00:00:00` : null,
-      status: status,
-      observacao: observacao,
-    };
+  const validar = () => {
+    const e = {};
+    if (!paciente) e.paciente = 'Selecione o paciente.';
+    if (!unidadeSaude) e.unidadeSaude = 'Selecione a unidade de saúde.';
+    if (!profissional) e.profissional = 'Selecione o profissional.';
+    if (!dataAtendimento.trim()) e.dataAtendimento = 'Informe a data do atendimento.';
+    else if (!/^\d{4}-\d{2}-\d{2}$/.test(dataAtendimento)) e.dataAtendimento = 'Use o formato AAAA-MM-DD. Ex: 2026-06-15';
+    if (!status) e.status = 'Selecione o status do atendimento.';
+    setErros(e);
+    return Object.keys(e).length === 0;
+  };
 
+  const salvar = async () => {
+    if (!validar()) return;
+    const dados = {
+      paciente,
+      unidade_saude: unidadeSaude,
+      profissional,
+      data_atendimento: `${dataAtendimento}T00:00:00`,
+      status,
+      observacao,
+    };
     try {
       if (editando) {
         await api.put(`/atendimentos/${editando.id}/`, dados);
@@ -40,41 +67,28 @@ export default function AtendimentoForm({ route, navigation }) {
       }
       navigation.goBack();
     } catch (err) {
-      Alert.alert('Erro', 'Verifique os dados informados.');
+      Alert.alert('Erro', 'Não foi possível salvar. Verifique os dados informados.');
     }
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.label}>ID do Paciente</Text>
-      <TextInput style={styles.input} value={paciente} onChangeText={setPaciente} keyboardType='numeric' />
+    <ScrollView style={formStyles.container}>
+      <Seletor label="Paciente *" valor={paciente} aoSelecionar={setPaciente} itens={pacientes.itens} carregando={pacientes.carregando} erro={erros.paciente}
+        mensagemVazio="Nenhum paciente cadastrado. Cadastre um paciente primeiro." />
+      <Seletor label="Unidade de Saúde *" valor={unidadeSaude} aoSelecionar={setUnidadeSaude} itens={unidades.itens} carregando={unidades.carregando} erro={erros.unidadeSaude}
+        mensagemVazio="Nenhuma unidade cadastrada. Cadastre uma unidade primeiro." />
+      <Seletor label="Profissional *" valor={profissional} aoSelecionar={setProfissional} itens={profissionais.itens} carregando={profissionais.carregando} erro={erros.profissional}
+        mensagemVazio="Nenhum profissional cadastrado. Cadastre um profissional primeiro." />
 
-      <Text style={styles.label}>ID da Unidade de Saúde</Text>
-      <TextInput style={styles.input} value={unidadeSaude} onChangeText={setUnidadeSaude} keyboardType='numeric' />
+      <CampoTexto label="Data do Atendimento *" value={dataAtendimento} onChangeText={setDataAtendimento} placeholder="2026-06-15" ajuda="Formato: AAAA-MM-DD" erro={erros.dataAtendimento} />
 
-      <Text style={styles.label}>ID do Profissional</Text>
-      <TextInput style={styles.input} value={profissional} onChangeText={setProfissional} keyboardType='numeric' />
+      <Seletor label="Status *" valor={status} aoSelecionar={setStatus} itens={STATUS} erro={erros.status} placeholder="Selecione o status" />
 
-      <Text style={styles.label}>Data (AAAA-MM-DD)</Text>
-      <TextInput style={styles.input} value={dataAtendimento} onChangeText={setDataAtendimento} placeholder='Ex: 2026-06-15' />
+      <CampoTexto label="Observação" value={observacao} onChangeText={setObservacao} multiline />
 
-      <Text style={styles.label}>Status (agendado/realizado/cancelado)</Text>
-      <TextInput style={styles.input} value={status} onChangeText={setStatus} placeholder='agendado' />
-
-      <Text style={styles.label}>Observação</Text>
-      <TextInput style={styles.input} value={observacao} onChangeText={setObservacao} multiline />
-
-      <TouchableOpacity style={styles.btnSalvar} onPress={salvar}>
-        <Text style={styles.btnTexto}>{editando ? 'Atualizar' : 'Cadastrar'}</Text>
+      <TouchableOpacity style={formStyles.btnSalvar} onPress={salvar}>
+        <Text style={formStyles.btnTexto}>{editando ? 'Atualizar' : 'Cadastrar'}</Text>
       </TouchableOpacity>
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#f5f5f5' },
-  label: { fontSize: 14, fontWeight: 'bold', marginTop: 12, marginBottom: 4, color: '#333' },
-  input: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 16 },
-  btnSalvar: { backgroundColor: '#1E8449', padding: 14, borderRadius: 8, marginTop: 24, alignItems: 'center', marginBottom: 40 },
-  btnTexto: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-});
