@@ -1,28 +1,21 @@
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import api from '../../services/api';
+import useLista from '../../hooks/useLista';
 
 export default function VacinaList({ navigation }) {
-  const [vacinas, setVacinas] = useState([]);
-
-  const carregar = async () => {
-    try {
-      const res = await api.get('/vacinas/');
-      setVacinas(res.data);
-    } catch (err) {
-      Alert.alert('Erro', 'Nao foi possivel carregar vacinas');
-    }
-  };
-
-  useFocusEffect(useCallback(() => { carregar(); }, []));
+  const { itens: vacinas, carregar } = useLista('/vacinas/', 'Nao foi possivel carregar vacinas');
 
   const deletar = async (id) => {
     Alert.alert('Confirmar', 'Deseja excluir esta vacina?', [
       { text: 'Cancelar' },
       { text: 'Excluir', onPress: async () => {
-        await api.delete('/vacinas/' + id + '/');
-        carregar();
+        try {
+          await api.delete('/vacinas/' + id + '/');
+          carregar();
+        } catch (err) {
+          Alert.alert('Erro', 'Não foi possível excluir a vacina.');
+        }
       }}
     ]);
   };

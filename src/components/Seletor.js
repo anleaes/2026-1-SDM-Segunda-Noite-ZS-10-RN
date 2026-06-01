@@ -9,21 +9,7 @@ import {
 } from 'react-native';
 import { formStyles, cores } from './formStyles';
 
-// Seletor (dropdown) reutilizável.
-//
-// Em vez de pedir um "ID" numérico ao usuário, mostramos uma lista dos
-// registros já cadastrados. Quando não há nenhum registro, exibimos uma
-// mensagem clara orientando o usuário a cadastrar primeiro.
-//
-// Props:
-//  - label: título do campo
-//  - valor: id selecionado (number) ou null
-//  - aoSelecionar: (id) => void
-//  - itens: [{ valor, rotulo }]
-//  - placeholder: texto quando nada está selecionado
-//  - erro: mensagem de validação a exibir
-//  - carregando: bool, enquanto a lista é buscada na API
-//  - mensagemVazio: texto exibido quando não há itens cadastrados
+// Seletor (dropdown) reutilizável: lista os registros já cadastrados em vez de pedir um ID.
 export default function Seletor({
   label,
   valor,

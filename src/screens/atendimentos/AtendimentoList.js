@@ -1,28 +1,23 @@
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import api from '../../services/api';
+import useLista from '../../hooks/useLista';
+import useMapaNomes from '../../hooks/useMapaNomes';
 
 export default function AtendimentoList({ navigation }) {
-  const [atendimentos, setAtendimentos] = useState([]);
-
-  const carregar = async () => {
-    try {
-      const res = await api.get('/atendimentos/');
-      setAtendimentos(res.data);
-    } catch (err) {
-      Alert.alert('Erro', 'Não foi possível carregar os atendimentos.');
-    }
-  };
-
-  useFocusEffect(useCallback(() => { carregar(); }, []));
+  const { itens: atendimentos, carregar } = useLista('/atendimentos/', 'Não foi possível carregar os atendimentos.');
+  const nomePaciente = useMapaNomes('/pessoas/pacientes/', (p) => p.nome);
 
   const deletar = async (id) => {
     Alert.alert('Confirmar', 'Deseja excluir este atendimento?', [
       { text: 'Cancelar' },
       { text: 'Excluir', onPress: async () => {
-          await api.delete(`/atendimentos/${id}/`);
-          carregar();
+          try {
+            await api.delete(`/atendimentos/${id}/`);
+            carregar();
+          } catch (err) {
+            Alert.alert('Erro', 'Não foi possível excluir o atendimento.');
+          }
         }
       }
     ]);
@@ -40,7 +35,7 @@ export default function AtendimentoList({ navigation }) {
           <View style={styles.card}>
             <Text style={styles.nome}>Data: {item.data_atendimento}</Text>
             <Text>Status: {item.status}</Text>
-            <Text>Paciente ID: {item.paciente}</Text>
+            <Text>Paciente: {nomePaciente(item.paciente)}</Text>
             <View style={styles.acoes}>
               <TouchableOpacity onPress={() => navigation.navigate('AtendimentoForm', { atendimento: item })}>
                 <Text style={styles.editar}>Editar</Text>

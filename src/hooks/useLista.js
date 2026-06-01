@@ -1,24 +1,21 @@
 import { useState, useCallback } from 'react';
+import { Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../services/api';
 
-// Busca uma coleção e mapeia cada registro em { valor, rotulo } para um Seletor.
-export default function useColecao(endpoint, paraOpcao) {
+// Carrega uma lista de um endpoint (tratando paginação do DRF) e recarrega ao focar a tela.
+export default function useLista(endpoint, msgErro = 'Não foi possível carregar os dados.') {
   const [itens, setItens] = useState([]);
-  const [carregando, setCarregando] = useState(true);
 
   const carregar = useCallback(async () => {
-    setCarregando(true);
     try {
       const res = await api.get(endpoint);
       const lista = Array.isArray(res.data) ? res.data : res.data?.results || [];
-      setItens(lista.map(paraOpcao));
+      setItens(lista);
     } catch (err) {
-      setItens([]);
-    } finally {
-      setCarregando(false);
+      Alert.alert('Erro', msgErro);
     }
-  }, [endpoint]);
+  }, [endpoint, msgErro]);
 
   useFocusEffect(
     useCallback(() => {
@@ -26,5 +23,5 @@ export default function useColecao(endpoint, paraOpcao) {
     }, [carregar])
   );
 
-  return { itens, carregando };
+  return { itens, carregar };
 }

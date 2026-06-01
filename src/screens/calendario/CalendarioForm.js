@@ -4,6 +4,7 @@ import api from '../../services/api';
 import CampoTexto from '../../components/CampoTexto';
 import Seletor from '../../components/Seletor';
 import useColecao from '../../hooks/useColecao';
+import { mostrarErroApi } from '../../services/erros';
 import { formStyles } from '../../components/formStyles';
 
 export default function CalendarioForm({ route, navigation }) {
@@ -35,6 +36,8 @@ export default function CalendarioForm({ route, navigation }) {
     if (!idadeMinima.trim()) e.idadeMinima = 'Informe a idade mínima em meses.';
     else if (isNaN(parseInt(idadeMinima)) || parseInt(idadeMinima) < 0) e.idadeMinima = 'Deve ser um número inteiro igual ou maior que zero.';
     if (idadeMaxima.trim() && isNaN(parseInt(idadeMaxima))) e.idadeMaxima = 'Deve ser um número inteiro (meses).';
+    else if (idadeMaxima.trim() && idadeMinima.trim() && parseInt(idadeMaxima) < parseInt(idadeMinima))
+      e.idadeMaxima = 'A idade máxima deve ser maior ou igual à mínima.';
     if (!publicoAlvo.trim()) e.publicoAlvo = 'Informe o público alvo.';
     if (!doseRecomendada.trim()) e.doseRecomendada = 'Informe a dose recomendada.';
     setErros(e);
@@ -59,7 +62,7 @@ export default function CalendarioForm({ route, navigation }) {
       }
       navigation.goBack();
     } catch (err) {
-      Alert.alert('Erro', 'Não foi possível salvar. Verifique os dados informados.');
+      mostrarErroApi(err);
     }
   };
 

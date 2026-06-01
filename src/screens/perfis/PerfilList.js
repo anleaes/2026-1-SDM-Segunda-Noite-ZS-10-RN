@@ -1,29 +1,25 @@
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import api from '../../services/api';
+import useLista from '../../hooks/useLista';
+import useMapaNomes from '../../hooks/useMapaNomes';
 
 export default function PerfilList({ navigation }) {
-  const [perfis, setPerfis] = useState([]);
-
-  const carregar = async () => {
-    try {
-      const res = await api.get('/perfis/');
-      setPerfis(res.data);
-    } catch (err) {
-      Alert.alert('Erro', 'Nao foi possivel carregar perfis');
-    }
-  };
-
-  useFocusEffect(useCallback(() => { carregar(); }, []));
+  const { itens: perfis, carregar } = useLista('/perfis/', 'Nao foi possivel carregar perfis');
+  const nomePaciente = useMapaNomes('/pessoas/pacientes/', (p) => p.nome);
 
   const deletar = async (id) => {
     Alert.alert('Confirmar', 'Deseja excluir este perfil?', [
       { text: 'Cancelar' },
       { text: 'Excluir', onPress: async () => {
-        await api.delete('/perfis/' + id + '/');
-        carregar();
-      }}
+          try {
+            await api.delete('/perfis/' + id + '/');
+            carregar();
+          } catch (err) {
+            Alert.alert('Erro', 'Não foi possível excluir o perfil.');
+          }
+        }
+      }
     ]);
   };
 
@@ -40,7 +36,7 @@ export default function PerfilList({ navigation }) {
         keyExtractor={(item) => String(item.id)}
         renderItem={({ item }) => (
           <View style={styles.card}>
-            <Text style={styles.nome}>Paciente ID: {item.paciente}</Text>
+            <Text style={styles.nome}>Paciente: {nomePaciente(item.paciente)}</Text>
             <Text>Grupo Risco: {item.grupo_risco ? 'Sim' : 'Nao'}</Text>
             <Text>Gestante: {item.gestante ? 'Sim' : 'Nao'}</Text>
             <Text>Alergias: {item.alergias || 'Nenhuma'}</Text>

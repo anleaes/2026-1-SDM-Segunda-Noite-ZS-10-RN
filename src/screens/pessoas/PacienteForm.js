@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { TouchableOpacity, Text, ScrollView, Alert } from 'react-native';
 import api from '../../services/api';
 import CampoTexto from '../../components/CampoTexto';
+import CampoData from '../../components/CampoData';
 import { formStyles } from '../../components/formStyles';
 
 export default function PacienteForm({ route, navigation }) {
@@ -64,7 +65,7 @@ export default function PacienteForm({ route, navigation }) {
       <CampoTexto label="Email *" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" placeholder="nome@email.com" erro={erros.email} />
       <CampoTexto label="Telefone *" value={telefone} onChangeText={setTelefone} keyboardType="phone-pad" placeholder="(00) 00000-0000" erro={erros.telefone} />
       <CampoTexto label="CPF *" value={cpf} onChangeText={setCpf} placeholder="000.000.000-00" erro={erros.cpf} />
-      <CampoTexto label="Data de Nascimento *" value={dataNascimento} onChangeText={setDataNascimento} placeholder="2000-01-15" ajuda="Formato: AAAA-MM-DD" erro={erros.dataNascimento} />
+      <CampoData label="Data de Nascimento *" value={dataNascimento} onChange={setDataNascimento} maximumDate={new Date()} erro={erros.dataNascimento} />
 
       <TouchableOpacity style={formStyles.btnSalvar} onPress={salvar}>
         <Text style={formStyles.btnTexto}>{editando ? 'Atualizar' : 'Cadastrar'}</Text>

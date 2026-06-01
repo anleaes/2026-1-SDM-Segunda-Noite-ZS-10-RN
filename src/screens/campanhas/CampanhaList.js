@@ -1,21 +1,10 @@
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import api from '../../services/api';
+import useLista from '../../hooks/useLista';
 
 export default function CampanhaList({ navigation }) {
-  const [campanhas, setCampanhas] = useState([]);
-
-  const carregar = async () => {
-    try {
-      const res = await api.get('/campanhas/');
-      setCampanhas(res.data);
-    } catch (err) {
-      Alert.alert('Erro', 'Não foi possível carregar campanhas');
-    }
-  };
-
-  useFocusEffect(useCallback(() => { carregar(); }, []));
+  const { itens: campanhas, carregar } = useLista('/campanhas/', 'Não foi possível carregar campanhas');
 
   const deletar = async (id) => {
     Alert.alert('Confirmar', 'Deseja excluir esta campanha?', [

@@ -4,6 +4,7 @@ import api from '../../services/api';
 import CampoTexto from '../../components/CampoTexto';
 import Seletor from '../../components/Seletor';
 import useColecao from '../../hooks/useColecao';
+import { mostrarErroApi } from '../../services/erros';
 import { formStyles, cores } from '../../components/formStyles';
 
 const TIPOS = [
@@ -52,7 +53,7 @@ export default function NotificacaoForm({ route, navigation }) {
       }
       navigation.goBack();
     } catch (err) {
-      Alert.alert('Erro', 'Não foi possível salvar a notificação.');
+      mostrarErroApi(err, 'Não foi possível salvar a notificação.');
     }
   };
 

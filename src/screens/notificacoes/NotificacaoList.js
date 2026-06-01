@@ -1,24 +1,15 @@
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import api from '../../services/api';
+import useLista from '../../hooks/useLista';
+import useMapaNomes from '../../hooks/useMapaNomes';
 
 const TIPO_LABEL = { lembrete: 'Lembrete', alerta: 'Alerta', informativo: 'Informativo' };
 const TIPO_COR = { lembrete: '#2E75B6', alerta: '#C0392B', informativo: '#1E8449' };
 
 export default function NotificacaoList({ navigation }) {
-  const [notificacoes, setNotificacoes] = useState([]);
-
-  const carregar = async () => {
-    try {
-      const res = await api.get('/notificacoes/');
-      setNotificacoes(res.data);
-    } catch (err) {
-      Alert.alert('Erro', 'Não foi possível carregar notificações');
-    }
-  };
-
-  useFocusEffect(useCallback(() => { carregar(); }, []));
+  const { itens: notificacoes, carregar } = useLista('/notificacoes/', 'Não foi possível carregar notificações');
+  const nomePaciente = useMapaNomes('/pessoas/pacientes/', (p) => p.nome);
 
   const deletar = async (id) => {
     Alert.alert('Confirmar', 'Deseja excluir esta notificação?', [
@@ -53,7 +44,7 @@ export default function NotificacaoList({ navigation }) {
               </View>
             </View>
             <Text style={styles.mensagem}>{item.mensagem}</Text>
-            <Text style={styles.paciente}>Paciente ID: {item.paciente}</Text>
+            <Text style={styles.paciente}>Paciente: {nomePaciente(item.paciente)}</Text>
             <View style={styles.acoes}>
               <TouchableOpacity onPress={() => navigation.navigate('NotificacaoForm', { notificacao: item })}>
                 <Text style={styles.editar}>Editar</Text>
