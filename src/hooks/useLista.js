@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
-import { Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../services/api';
+import { avisar } from '../services/dialogo';
 
 // Carrega uma lista de um endpoint (tratando paginação do DRF) e recarrega ao focar a tela.
 export default function useLista(endpoint, msgErro = 'Não foi possível carregar os dados.') {
@@ -13,7 +13,7 @@ export default function useLista(endpoint, msgErro = 'Não foi possível carrega
       const lista = Array.isArray(res.data) ? res.data : res.data?.results || [];
       setItens(lista);
     } catch (err) {
-      Alert.alert('Erro', msgErro);
+      avisar('Erro', msgErro);
     }
   }, [endpoint, msgErro]);
 

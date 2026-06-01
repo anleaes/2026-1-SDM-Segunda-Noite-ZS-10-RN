@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity } from 'react-native';
 import api from '../../services/api';
+import { confirmar, avisar } from '../../services/dialogo';
 import useLista from '../../hooks/useLista';
 import { styles } from './LoteList.styles';
 
@@ -8,17 +9,14 @@ export default function LoteList({ navigation }) {
   const { itens: lotes, carregar } = useLista('/vacinas/lotes/', 'Nao foi possivel carregar lotes');
 
   const deletar = async (id) => {
-    Alert.alert('Confirmar', 'Deseja excluir este lote?', [
-      { text: 'Cancelar' },
-      { text: 'Excluir', onPress: async () => {
-        try {
-          await api.delete('/vacinas/lotes/' + id + '/');
-          carregar();
-        } catch (err) {
-          Alert.alert('Erro', 'Não foi possível excluir o lote.');
-        }
-      }}
-    ]);
+    const ok = await confirmar('Confirmar', 'Deseja excluir este lote?', 'Excluir');
+    if (!ok) return;
+    try {
+      await api.delete('/vacinas/lotes/' + id + '/');
+      carregar();
+    } catch (err) {
+      avisar('Erro', 'Não foi possível excluir o lote.');
+    }
   };
 
   return (

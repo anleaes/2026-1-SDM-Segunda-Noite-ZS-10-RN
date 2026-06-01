@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity } from 'react-native';
 import api from '../../services/api';
+import { confirmar, avisar } from '../../services/dialogo';
 import useLista from '../../hooks/useLista';
 import { styles } from './ProfissionalList.styles';
 
@@ -8,17 +9,14 @@ export default function ProfissionalList({ navigation }) {
   const { itens: profissionais, carregar } = useLista('/pessoas/profissionais/', 'Nao foi possivel carregar profissionais');
 
   const deletar = async (id) => {
-    Alert.alert('Confirmar', 'Deseja excluir este profissional?', [
-      { text: 'Cancelar' },
-      { text: 'Excluir', onPress: async () => {
-        try {
-          await api.delete('/pessoas/profissionais/' + id + '/');
-          carregar();
-        } catch (err) {
-          Alert.alert('Erro', 'Não foi possível excluir o profissional.');
-        }
-      }}
-    ]);
+    const ok = await confirmar('Confirmar', 'Deseja excluir este profissional?', 'Excluir');
+    if (!ok) return;
+    try {
+      await api.delete('/pessoas/profissionais/' + id + '/');
+      carregar();
+    } catch (err) {
+      avisar('Erro', 'Não foi possível excluir o profissional.');
+    }
   };
 
   return (

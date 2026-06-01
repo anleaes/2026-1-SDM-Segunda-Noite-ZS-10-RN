@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity } from 'react-native';
 import api from '../../services/api';
+import { confirmar, avisar } from '../../services/dialogo';
 import useLista from '../../hooks/useLista';
 import { styles } from './CampanhaList.styles';
 
@@ -8,19 +9,14 @@ export default function CampanhaList({ navigation }) {
   const { itens: campanhas, carregar } = useLista('/campanhas/', 'Não foi possível carregar campanhas');
 
   const deletar = async (id) => {
-    Alert.alert('Confirmar', 'Deseja excluir esta campanha?', [
-      { text: 'Cancelar' },
-      {
-        text: 'Excluir', onPress: async () => {
-          try {
-             await api.delete(`/campanhas/${id}/`);
-            carregar();
-          } catch (err) {
-            Alert.alert('Erro', 'Não foi possível excluir');
-          }
-        }
-      }
-    ]);
+    const ok = await confirmar('Confirmar', 'Deseja excluir esta campanha?', 'Excluir');
+    if (!ok) return;
+    try {
+      await api.delete(`/campanhas/${id}/`);
+      carregar();
+    } catch (err) {
+      avisar('Erro', 'Não foi possível excluir');
+    }
   };
 
   return (

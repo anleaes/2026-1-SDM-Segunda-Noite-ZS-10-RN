@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Alert, ScrollView, Switch } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Switch } from 'react-native';
 import api from '../../services/api';
+import { avisar } from '../../services/dialogo';
 import CampoTexto from '../../components/CampoTexto';
 import CampoData from '../../components/CampoData';
 import { formStyles, cores } from '../../components/formStyles';
@@ -51,7 +52,7 @@ export default function CampanhaForm({ route, navigation }) {
       }
       navigation.goBack();
     } catch (err) {
-      Alert.alert('Erro', 'Não foi possível salvar. Verifique os campos e tente novamente.');
+      avisar('Erro', 'Não foi possível salvar. Verifique os campos e tente novamente.');
     }
   };
 

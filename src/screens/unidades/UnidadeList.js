@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity } from 'react-native';
 import api from '../../services/api';
+import { confirmar, avisar } from '../../services/dialogo';
 import useLista from '../../hooks/useLista';
 import { styles } from './UnidadeList.styles';
 
@@ -8,17 +9,14 @@ export default function UnidadeList({ navigation }) {
   const { itens: unidades, carregar } = useLista('/unidades/', 'Nao foi possivel carregar unidades');
 
   const deletar = async (id) => {
-    Alert.alert('Confirmar', 'Deseja excluir esta unidade?', [
-      { text: 'Cancelar' },
-      { text: 'Excluir', onPress: async () => {
-        try {
-          await api.delete('/unidades/' + id + '/');
-          carregar();
-        } catch (err) {
-          Alert.alert('Erro', 'Não foi possível excluir a unidade.');
-        }
-      }}
-    ]);
+    const ok = await confirmar('Confirmar', 'Deseja excluir esta unidade?', 'Excluir');
+    if (!ok) return;
+    try {
+      await api.delete('/unidades/' + id + '/');
+      carregar();
+    } catch (err) {
+      avisar('Erro', 'Não foi possível excluir a unidade.');
+    }
   };
 
   return (

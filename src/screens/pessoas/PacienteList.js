@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity } from 'react-native';
 import api from '../../services/api';
+import { confirmar, avisar } from '../../services/dialogo';
 import useLista from '../../hooks/useLista';
 import { styles } from './PacienteList.styles';
 
@@ -8,17 +9,14 @@ export default function PacienteList({ navigation }) {
   const { itens: pacientes, carregar } = useLista('/pessoas/pacientes/', 'Nao foi possivel carregar pacientes');
 
   const deletar = async (id) => {
-    Alert.alert('Confirmar', 'Deseja excluir este paciente?', [
-      { text: 'Cancelar' },
-      { text: 'Excluir', onPress: async () => {
-        try {
-          await api.delete('/pessoas/pacientes/' + id + '/');
-          carregar();
-        } catch (err) {
-          Alert.alert('Erro', 'Não foi possível excluir o paciente.');
-        }
-      }}
-    ]);
+    const ok = await confirmar('Confirmar', 'Deseja excluir este paciente?', 'Excluir');
+    if (!ok) return;
+    try {
+      await api.delete('/pessoas/pacientes/' + id + '/');
+      carregar();
+    } catch (err) {
+      avisar('Erro', 'Não foi possível excluir o paciente.');
+    }
   };
 
   return (

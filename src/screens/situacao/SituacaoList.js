@@ -4,11 +4,11 @@ import {
   View,
   Text,
   FlatList,
-  TouchableOpacity,
-  Alert
+  TouchableOpacity
 } from 'react-native';
 
 import api from '../../services/api';
+import { confirmar, avisar } from '../../services/dialogo';
 import useLista from '../../hooks/useLista';
 import useMapaNomes from '../../hooks/useMapaNomes';
 import { styles } from './SituacaoList.styles';
@@ -33,40 +33,14 @@ export default function SituacaoList({ navigation }) {
   const nomeCalendario = useMapaNomes('/calendario/', (c) => `${c.dose_recomendada} - ${c.publico_alvo}`);
 
   const deletar = async (id) => {
-
-    Alert.alert(
-      'Confirmar',
-      'Deseja excluir esta situação?',
-      [
-        { text: 'Cancelar' },
-
-        {
-          text: 'Excluir',
-
-          onPress: async () => {
-
-            try {
-
-              await api.delete(`/situacao/${id}/`);
-
-              carregar();
-
-            } catch (err) {
-
-              Alert.alert(
-                'Erro',
-                'Não foi possível excluir'
-              );
-
-            }
-
-          }
-
-        }
-
-      ]
-    );
-
+    const ok = await confirmar('Confirmar', 'Deseja excluir esta situação?', 'Excluir');
+    if (!ok) return;
+    try {
+      await api.delete(`/situacao/${id}/`);
+      carregar();
+    } catch (err) {
+      avisar('Erro', 'Não foi possível excluir');
+    }
   };
 
   return (
