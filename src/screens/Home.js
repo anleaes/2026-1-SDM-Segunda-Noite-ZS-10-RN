@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
+import { confirmar } from '../services/dialogo';
 import { cores } from '../components/formStyles';
 import { styles } from './Home.styles';
 
@@ -41,11 +42,9 @@ const GRUPOS = [
 export default function Home({ navigation }) {
   const { usuario, sair } = useAuth();
 
-  const confirmarSair = () => {
-    Alert.alert('Sair', 'Deseja encerrar a sessão?', [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Sair', style: 'destructive', onPress: sair },
-    ]);
+  const confirmarSair = async () => {
+    const ok = await confirmar('Sair', 'Deseja encerrar a sessão?', 'Sair');
+    if (ok) sair();
   };
 
   return (

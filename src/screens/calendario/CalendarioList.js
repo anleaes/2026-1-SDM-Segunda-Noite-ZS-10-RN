@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity } from 'react-native';
 import api from '../../services/api';
+import { confirmar, avisar } from '../../services/dialogo';
 import useLista from '../../hooks/useLista';
 import useMapaNomes from '../../hooks/useMapaNomes';
 import { styles } from './CalendarioList.styles';
@@ -10,18 +11,14 @@ export default function CalendarioList({ navigation }) {
   const nomeVacina = useMapaNomes('/vacinas/', (v) => v.nome);
 
   const deletar = async (id) => {
-    Alert.alert('Confirmar', 'Deseja excluir esta regra do calendário?', [
-      { text: 'Cancelar' },
-      { text: 'Excluir', onPress: async () => {
-          try {
-            await api.delete(`/calendario/${id}/`);
-            carregar();
-          } catch (err) {
-            Alert.alert('Erro', 'Não foi possível excluir o calendário.');
-          }
-        }
-      }
-    ]);
+    const ok = await confirmar('Confirmar', 'Deseja excluir esta regra do calendário?', 'Excluir');
+    if (!ok) return;
+    try {
+      await api.delete(`/calendario/${id}/`);
+      carregar();
+    } catch (err) {
+      avisar('Erro', 'Não foi possível excluir o calendário.');
+    }
   };
 
   return (

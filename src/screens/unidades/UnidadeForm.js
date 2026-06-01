@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import api from '../../services/api';
+import { avisar } from '../../services/dialogo';
 import CampoTexto from '../../components/CampoTexto';
 import CampoHora from '../../components/CampoHora';
 import { formStyles } from '../../components/formStyles';
@@ -64,9 +65,9 @@ export default function UnidadeForm({ route, navigation }) {
         const mensagens = Object.entries(err.response.data)
           .map(([campo, msgs]) => `${campo}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
           .join('\n');
-        Alert.alert('Erro ao salvar', mensagens);
+        avisar('Erro ao salvar', mensagens);
       } else {
-        Alert.alert('Erro', 'Não foi possível salvar. Verifique sua conexão.');
+        avisar('Erro', 'Não foi possível salvar. Verifique sua conexão.');
       }
     }
   };

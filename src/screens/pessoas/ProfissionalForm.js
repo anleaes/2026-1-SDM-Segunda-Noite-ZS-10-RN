@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { TouchableOpacity, Text, ScrollView, Alert } from 'react-native';
+import { TouchableOpacity, Text, ScrollView } from 'react-native';
 import api from '../../services/api';
+import { avisar } from '../../services/dialogo';
 import CampoTexto from '../../components/CampoTexto';
 import Seletor from '../../components/Seletor';
 import useColecao from '../../hooks/useColecao';
@@ -67,9 +68,9 @@ export default function ProfissionalForm({ route, navigation }) {
         const mensagens = Object.entries(err.response.data)
           .map(([campo, msgs]) => `${campo}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
           .join('\n');
-        Alert.alert('Erro ao salvar', mensagens);
+        avisar('Erro ao salvar', mensagens);
       } else {
-        Alert.alert('Erro', 'Não foi possível salvar. Verifique sua conexão.');
+        avisar('Erro', 'Não foi possível salvar. Verifique sua conexão.');
       }
     }
   };
