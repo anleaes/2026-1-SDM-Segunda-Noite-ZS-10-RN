@@ -1,6 +1,10 @@
 import React from 'react';
+import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
+import { useAuth } from '../contexts/AuthContext';
+import LoginScreen from '../screens/LoginScreen';
 
 // Home (menu principal)
 import Home from '../screens/Home';
@@ -54,16 +58,29 @@ import SituacaoForm from '../screens/situacao/SituacaoForm';
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
+  const { autenticado, carregando } = useAuth();
+
+  if (carregando) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f5f5' }}>
+        <ActivityIndicator size="large" color="#2E75B6" />
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="Home"
         screenOptions={{
           headerStyle: { backgroundColor: '#2E75B6' },
           headerTintColor: '#fff',
           headerTitleStyle: { fontWeight: 'bold' },
         }}
       >
+        {!autenticado ? (
+          <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+        ) : (
+          <>
         <Stack.Screen name="Home" component={Home} options={{ title: 'Gestor de Vacinação' }} />
 
         {/* Pessoas */}
@@ -111,6 +128,8 @@ export default function AppNavigator() {
         {/* Situacao */}
         <Stack.Screen name="SituacaoList" component={SituacaoList} options={{ title: 'Situação Vacinal' }} />
         <Stack.Screen name="SituacaoForm" component={SituacaoForm} options={{ title: 'Cadastro de Situação' }} />
+          </>
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );

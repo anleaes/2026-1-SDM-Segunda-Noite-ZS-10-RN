@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Switch } from 'react-native';
 import api from '../../services/api';
 import CampoTexto from '../../components/CampoTexto';
+import CampoData from '../../components/CampoData';
 import { formStyles, cores } from '../../components/formStyles';
 
 export default function CampanhaForm({ route, navigation }) {
@@ -57,8 +58,8 @@ export default function CampanhaForm({ route, navigation }) {
     <ScrollView style={formStyles.container}>
       <CampoTexto label="Nome *" value={nome} onChangeText={setNome} placeholder="Nome da campanha" erro={erros.nome} />
       <CampoTexto label="Descrição" value={descricao} onChangeText={setDescricao} multiline numberOfLines={3} placeholder="Descrição" />
-      <CampoTexto label="Data Início *" value={dataInicio} onChangeText={setDataInicio} placeholder="2026-01-01" ajuda="Formato: AAAA-MM-DD" erro={erros.dataInicio} />
-      <CampoTexto label="Data Fim *" value={dataFim} onChangeText={setDataFim} placeholder="2026-12-31" ajuda="Formato: AAAA-MM-DD" erro={erros.dataFim} />
+      <CampoData label="Data Início *" value={dataInicio} onChange={setDataInicio} erro={erros.dataInicio} />
+      <CampoData label="Data Fim *" value={dataFim} onChange={setDataFim} erro={erros.dataFim} />
       <CampoTexto label="Público Alvo" value={publicoAlvo} onChangeText={setPublicoAlvo} placeholder="Ex: Crianças de 0 a 5 anos" />
 
       <View style={styles.switchRow}>

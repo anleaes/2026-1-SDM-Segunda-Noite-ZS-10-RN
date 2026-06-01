@@ -1,28 +1,23 @@
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import api from '../../services/api';
+import useLista from '../../hooks/useLista';
+import useMapaNomes from '../../hooks/useMapaNomes';
 
 export default function DoseList({ navigation }) {
-  const [doses, setDoses] = useState([]);
-
-  const carregar = async () => {
-    try {
-      const res = await api.get('/atendimentos/doses/');
-      setDoses(res.data);
-    } catch (err) {
-      Alert.alert('Erro', 'Não foi possível carregar as doses.');
-    }
-  };
-
-  useFocusEffect(useCallback(() => { carregar(); }, []));
+  const { itens: doses, carregar } = useLista('/atendimentos/doses/', 'Não foi possível carregar as doses.');
+  const nomeVacina = useMapaNomes('/vacinas/', (v) => v.nome);
 
   const deletar = async (id) => {
     Alert.alert('Confirmar', 'Deseja excluir este registro de dose?', [
       { text: 'Cancelar' },
       { text: 'Excluir', onPress: async () => {
-          await api.delete(`/atendimentos/doses/${id}/`);
-          carregar();
+          try {
+            await api.delete(`/atendimentos/doses/${id}/`);
+            carregar();
+          } catch (err) {
+            Alert.alert('Erro', 'Não foi possível excluir a dose.');
+          }
         }
       }
     ]);
@@ -38,9 +33,9 @@ export default function DoseList({ navigation }) {
         keyExtractor={(item) => String(item.id)}
         renderItem={({ item }) => (
           <View style={styles.card}>
-            <Text style={styles.nome}>Vacina ID: {item.vacina}</Text>
+            <Text style={styles.nome}>Vacina: {nomeVacina(item.vacina)}</Text>
             <Text>Ordem da Dose: {item.ordem_dose}</Text>
-            <Text>Atendimento ID: {item.atendimento}</Text>
+            <Text>Atendimento: #{item.atendimento}</Text>
             <View style={styles.acoes}>
               <TouchableOpacity onPress={() => navigation.navigate('DoseForm', { dose: item })}>
                 <Text style={styles.editar}>Editar</Text>

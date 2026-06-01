@@ -4,6 +4,7 @@ import api from '../../services/api';
 import CampoTexto from '../../components/CampoTexto';
 import Seletor from '../../components/Seletor';
 import useColecao from '../../hooks/useColecao';
+import { mostrarErroApi } from '../../services/erros';
 import { formStyles } from '../../components/formStyles';
 
 export default function PerfilForm({ route, navigation }) {
@@ -45,7 +46,7 @@ export default function PerfilForm({ route, navigation }) {
       }
       navigation.goBack();
     } catch (err) {
-      Alert.alert('Erro', 'Não foi possível salvar. Verifique os campos e tente novamente.');
+      mostrarErroApi(err);
     }
   };
 

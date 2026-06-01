@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { TouchableOpacity, Text, ScrollView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import api from '../../services/api';
 import CampoTexto from '../../components/CampoTexto';
+import CampoHora from '../../components/CampoHora';
 import { formStyles } from '../../components/formStyles';
 
 export default function UnidadeForm({ route, navigation }) {
@@ -10,7 +11,8 @@ export default function UnidadeForm({ route, navigation }) {
   const [endereco, setEndereco] = useState('');
   const [bairro, setBairro] = useState('');
   const [telefone, setTelefone] = useState('');
-  const [horario, setHorario] = useState('');
+  const [horaAbertura, setHoraAbertura] = useState('');
+  const [horaFechamento, setHoraFechamento] = useState('');
   const [erros, setErros] = useState({});
 
   useEffect(() => {
@@ -19,7 +21,10 @@ export default function UnidadeForm({ route, navigation }) {
       setEndereco(editando.endereco);
       setBairro(editando.bairro);
       setTelefone(editando.telefone);
-      setHorario(editando.horario_funcionamento);
+      // Tenta separar "08:00 - 17:00" em abertura/fechamento.
+      const partes = (editando.horario_funcionamento || '').split('-').map((p) => p.trim());
+      setHoraAbertura(partes[0] || '');
+      setHoraFechamento(partes[1] || '');
     }
   }, []);
 
@@ -29,14 +34,24 @@ export default function UnidadeForm({ route, navigation }) {
     if (!endereco.trim()) e.endereco = 'Informe o endereço.';
     if (!bairro.trim()) e.bairro = 'Informe o bairro.';
     if (!telefone.trim()) e.telefone = 'Informe um telefone para contato.';
-    if (!horario.trim()) e.horario = 'Informe o horário de funcionamento.';
+    if (!horaAbertura) e.horaAbertura = 'Informe a abertura.';
+    if (!horaFechamento) e.horaFechamento = 'Informe o fechamento.';
+    else if (horaAbertura && horaFechamento <= horaAbertura)
+      e.horaFechamento = 'O fechamento deve ser depois da abertura.';
     setErros(e);
     return Object.keys(e).length === 0;
   };
 
   const salvar = async () => {
     if (!validar()) return;
-    const dados = { nome, endereco, bairro, telefone, horario_funcionamento: horario, ativa: true };
+    const dados = {
+      nome,
+      endereco,
+      bairro,
+      telefone,
+      horario_funcionamento: `${horaAbertura} - ${horaFechamento}`,
+      ativa: true,
+    };
     try {
       if (editando) {
         await api.put('/unidades/' + editando.id + '/', dados);
@@ -62,7 +77,12 @@ export default function UnidadeForm({ route, navigation }) {
       <CampoTexto label="Endereço *" value={endereco} onChangeText={setEndereco} placeholder="Rua, número" erro={erros.endereco} />
       <CampoTexto label="Bairro *" value={bairro} onChangeText={setBairro} placeholder="Nome do bairro" erro={erros.bairro} />
       <CampoTexto label="Telefone *" value={telefone} onChangeText={setTelefone} keyboardType="phone-pad" placeholder="(00) 0000-0000" erro={erros.telefone} />
-      <CampoTexto label="Horário de Funcionamento *" value={horario} onChangeText={setHorario} placeholder="08:00 - 17:00" erro={erros.horario} />
+
+      <Text style={formStyles.label}>Horário de Funcionamento *</Text>
+      <View style={{ flexDirection: 'row', gap: 12 }}>
+        <CampoHora label="Abertura" value={horaAbertura} onChange={setHoraAbertura} erro={erros.horaAbertura} />
+        <CampoHora label="Fechamento" value={horaFechamento} onChange={setHoraFechamento} erro={erros.horaFechamento} />
+      </View>
 
       <TouchableOpacity style={formStyles.btnSalvar} onPress={salvar}>
         <Text style={formStyles.btnTexto}>{editando ? 'Atualizar' : 'Cadastrar'}</Text>

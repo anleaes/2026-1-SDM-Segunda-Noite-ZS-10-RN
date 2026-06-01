@@ -1,28 +1,21 @@
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import api from '../../services/api';
+import useLista from '../../hooks/useLista';
 
 export default function PacienteList({ navigation }) {
-  const [pacientes, setPacientes] = useState([]);
-
-  const carregar = async () => {
-    try {
-      const res = await api.get('/pessoas/pacientes/');
-      setPacientes(res.data);
-    } catch (err) {
-      Alert.alert('Erro', 'Nao foi possivel carregar pacientes');
-    }
-  };
-
-  useFocusEffect(useCallback(() => { carregar(); }, []));
+  const { itens: pacientes, carregar } = useLista('/pessoas/pacientes/', 'Nao foi possivel carregar pacientes');
 
   const deletar = async (id) => {
     Alert.alert('Confirmar', 'Deseja excluir este paciente?', [
       { text: 'Cancelar' },
       { text: 'Excluir', onPress: async () => {
-        await api.delete('/pessoas/pacientes/' + id + '/');
-        carregar();
+        try {
+          await api.delete('/pessoas/pacientes/' + id + '/');
+          carregar();
+        } catch (err) {
+          Alert.alert('Erro', 'Não foi possível excluir o paciente.');
+        }
       }}
     ]);
   };

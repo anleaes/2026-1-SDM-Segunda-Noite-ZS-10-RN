@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 
 import {
   View,
@@ -9,9 +9,9 @@ import {
   Alert
 } from 'react-native';
 
-import { useFocusEffect } from '@react-navigation/native';
-
 import api from '../../services/api';
+import useLista from '../../hooks/useLista';
+import useMapaNomes from '../../hooks/useMapaNomes';
 
 const STATUS_LABEL = {
   em_dia: 'Em dia',
@@ -27,32 +27,10 @@ const STATUS_COR = {
 
 export default function SituacaoList({ navigation }) {
 
-  const [situacoes, setSituacoes] = useState([]);
-
-  const carregar = async () => {
-
-    try {
-
-      const res = await api.get('/situacao/');
-
-      setSituacoes(res.data);
-
-    } catch (err) {
-
-      Alert.alert(
-        'Erro',
-        'Não foi possível carregar situações'
-      );
-
-    }
-
-  };
-
-  useFocusEffect(
-    useCallback(() => {
-      carregar();
-    }, [])
-  );
+  const { itens: situacoes, carregar } = useLista('/situacao/', 'Não foi possível carregar situações');
+  const nomePaciente = useMapaNomes('/pessoas/pacientes/', (p) => p.nome);
+  const nomeVacina = useMapaNomes('/vacinas/', (v) => v.nome);
+  const nomeCalendario = useMapaNomes('/calendario/', (c) => `${c.dose_recomendada} - ${c.publico_alvo}`);
 
   const deletar = async (id) => {
 
@@ -115,15 +93,15 @@ export default function SituacaoList({ navigation }) {
           <View style={styles.card}>
 
             <Text style={styles.titulo}>
-              Paciente ID: {item.paciente}
+              Paciente: {nomePaciente(item.paciente)}
             </Text>
 
             <Text>
-              Vacina ID: {item.vacina}
+              Vacina: {nomeVacina(item.vacina)}
             </Text>
 
             <Text>
-              Calendário ID: {item.calendario_vacinal}
+              Calendário: {nomeCalendario(item.calendario_vacinal)}
             </Text>
 
             <View

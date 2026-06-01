@@ -1,28 +1,23 @@
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import api from '../../services/api';
+import useLista from '../../hooks/useLista';
+import useMapaNomes from '../../hooks/useMapaNomes';
 
 export default function CalendarioList({ navigation }) {
-  const [calendarios, setCalendarios] = useState([]);
-
-  const carregar = async () => {
-    try {
-      const res = await api.get('/calendario/');
-      setCalendarios(res.data);
-    } catch (err) {
-      Alert.alert('Erro', 'Não foi possível carregar os calendários');
-    }
-  };
-
-  useFocusEffect(useCallback(() => { carregar(); }, []));
+  const { itens: calendarios, carregar } = useLista('/calendario/', 'Não foi possível carregar os calendários');
+  const nomeVacina = useMapaNomes('/vacinas/', (v) => v.nome);
 
   const deletar = async (id) => {
     Alert.alert('Confirmar', 'Deseja excluir esta regra do calendário?', [
       { text: 'Cancelar' },
       { text: 'Excluir', onPress: async () => {
-          await api.delete(`/calendario/${id}/`);
-          carregar();
+          try {
+            await api.delete(`/calendario/${id}/`);
+            carregar();
+          } catch (err) {
+            Alert.alert('Erro', 'Não foi possível excluir o calendário.');
+          }
         }
       }
     ]);
@@ -38,7 +33,7 @@ export default function CalendarioList({ navigation }) {
         keyExtractor={(item) => String(item.id)}
         renderItem={({ item }) => (
           <View style={styles.card}>
-            <Text style={styles.nome}>Vacina ID: {item.vacina}</Text>
+            <Text style={styles.nome}>Vacina: {nomeVacina(item.vacina)}</Text>
             <Text>Público: {item.publico_alvo}</Text>
             <Text>Dose: {item.dose_recomendada}</Text>
             <View style={styles.acoes}>

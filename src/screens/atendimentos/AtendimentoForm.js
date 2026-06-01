@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { TouchableOpacity, Text, ScrollView, Alert } from 'react-native';
 import api from '../../services/api';
 import CampoTexto from '../../components/CampoTexto';
+import CampoData from '../../components/CampoData';
 import Seletor from '../../components/Seletor';
 import useColecao from '../../hooks/useColecao';
+import { mostrarErroApi } from '../../services/erros';
 import { formStyles } from '../../components/formStyles';
 
 const STATUS = [
@@ -44,6 +46,8 @@ export default function AtendimentoForm({ route, navigation }) {
     if (!profissional) e.profissional = 'Selecione o profissional.';
     if (!dataAtendimento.trim()) e.dataAtendimento = 'Informe a data do atendimento.';
     else if (!/^\d{4}-\d{2}-\d{2}$/.test(dataAtendimento)) e.dataAtendimento = 'Use o formato AAAA-MM-DD. Ex: 2026-06-15';
+    else if (status === 'realizado' && dataAtendimento > new Date().toISOString().slice(0, 10))
+      e.dataAtendimento = 'Um atendimento realizado não pode ter data no futuro.';
     if (!status) e.status = 'Selecione o status do atendimento.';
     setErros(e);
     return Object.keys(e).length === 0;
@@ -67,7 +71,7 @@ export default function AtendimentoForm({ route, navigation }) {
       }
       navigation.goBack();
     } catch (err) {
-      Alert.alert('Erro', 'Não foi possível salvar. Verifique os dados informados.');
+      mostrarErroApi(err);
     }
   };
 
@@ -80,7 +84,7 @@ export default function AtendimentoForm({ route, navigation }) {
       <Seletor label="Profissional *" valor={profissional} aoSelecionar={setProfissional} itens={profissionais.itens} carregando={profissionais.carregando} erro={erros.profissional}
         mensagemVazio="Nenhum profissional cadastrado. Cadastre um profissional primeiro." />
 
-      <CampoTexto label="Data do Atendimento *" value={dataAtendimento} onChangeText={setDataAtendimento} placeholder="2026-06-15" ajuda="Formato: AAAA-MM-DD" erro={erros.dataAtendimento} />
+      <CampoData label="Data do Atendimento *" value={dataAtendimento} onChange={setDataAtendimento} erro={erros.dataAtendimento} />
 
       <Seletor label="Status *" valor={status} aoSelecionar={setStatus} itens={STATUS} erro={erros.status} placeholder="Selecione o status" />
 

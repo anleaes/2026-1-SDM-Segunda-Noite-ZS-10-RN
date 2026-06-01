@@ -1,28 +1,21 @@
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import api from '../../services/api';
+import useLista from '../../hooks/useLista';
 
 export default function LoteList({ navigation }) {
-  const [lotes, setLotes] = useState([]);
-
-  const carregar = async () => {
-    try {
-      const res = await api.get('/vacinas/lotes/');
-      setLotes(res.data);
-    } catch (err) {
-      Alert.alert('Erro', 'Nao foi possivel carregar lotes');
-    }
-  };
-
-  useFocusEffect(useCallback(() => { carregar(); }, []));
+  const { itens: lotes, carregar } = useLista('/vacinas/lotes/', 'Nao foi possivel carregar lotes');
 
   const deletar = async (id) => {
     Alert.alert('Confirmar', 'Deseja excluir este lote?', [
       { text: 'Cancelar' },
       { text: 'Excluir', onPress: async () => {
-        await api.delete('/vacinas/lotes/' + id + '/');
-        carregar();
+        try {
+          await api.delete('/vacinas/lotes/' + id + '/');
+          carregar();
+        } catch (err) {
+          Alert.alert('Erro', 'Não foi possível excluir o lote.');
+        }
       }}
     ]);
   };

@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { TouchableOpacity, Text, ScrollView, Alert } from 'react-native';
 import api from '../../services/api';
 import CampoTexto from '../../components/CampoTexto';
+import CampoData from '../../components/CampoData';
 import Seletor from '../../components/Seletor';
-import useColecao from '../../hooks/useColecao';
+import useLista from '../../hooks/useLista';
 import { formStyles } from '../../components/formStyles';
+
+const hojeISO = () => new Date().toISOString().slice(0, 10);
 
 export default function RegistroForm({ route, navigation }) {
   const editando = route.params?.registro;
@@ -15,19 +18,17 @@ export default function RegistroForm({ route, navigation }) {
   const [unidadeSaude, setUnidadeSaude] = useState(null);
   const [atendimento, setAtendimento] = useState(null);
   const [dataAplicacao, setDataAplicacao] = useState('');
-  const [dose, setDose] = useState('');
+  const [dose, setDose] = useState(null);
   const [observacao, setObservacao] = useState('');
   const [erros, setErros] = useState({});
 
-  const pacientes = useColecao('/pessoas/pacientes/', (p) => ({ valor: p.id, rotulo: p.nome }));
-  const vacinas = useColecao('/vacinas/', (v) => ({ valor: v.id, rotulo: v.nome }));
-  const lotes = useColecao('/vacinas/lotes/', (l) => ({ valor: l.id, rotulo: l.numero_lote }));
-  const profissionais = useColecao('/pessoas/profissionais/', (p) => ({ valor: p.id, rotulo: p.nome }));
-  const unidades = useColecao('/unidades/', (u) => ({ valor: u.id, rotulo: u.nome }));
-  const atendimentos = useColecao('/atendimentos/', (a) => ({
-    valor: a.id,
-    rotulo: `#${a.id} - ${(a.data_atendimento || '').slice(0, 10)} (${a.status})`,
-  }));
+  const { itens: pacientes } = useLista('/pessoas/pacientes/');
+  const { itens: vacinas } = useLista('/vacinas/');
+  const { itens: lotes } = useLista('/vacinas/lotes/');
+  const { itens: profissionais } = useLista('/pessoas/profissionais/');
+  const { itens: unidades } = useLista('/unidades/');
+  const { itens: atendimentos } = useLista('/atendimentos/');
+  const { itens: registros } = useLista('/registros/');
 
   useEffect(() => {
     if (editando) {
@@ -38,10 +39,70 @@ export default function RegistroForm({ route, navigation }) {
       setUnidadeSaude(editando.unidade_saude);
       setAtendimento(editando.atendimento);
       setDataAplicacao(editando.data_aplicacao);
-      setDose(editando.dose);
+      setDose(editando.dose != null ? Number(editando.dose) : null);
       setObservacao(editando.observacao || '');
     }
   }, []);
+
+  const vacinaSel = vacinas.find((v) => String(v.id) === String(vacina));
+  const totalDoses = vacinaSel?.quantidade_doses;
+  const hoje = hojeISO();
+
+  const opcoesPaciente = pacientes.map((p) => ({ valor: p.id, rotulo: p.nome }));
+  const opcoesVacina = vacinas.map((v) => ({ valor: v.id, rotulo: v.nome }));
+  const opcoesProfissional = profissionais.map((p) => ({ valor: p.id, rotulo: p.nome }));
+  const opcoesUnidade = unidades.map((u) => ({ valor: u.id, rotulo: u.nome }));
+  // Só atendimentos "realizados" podem receber um registro de aplicação.
+  const atendimentoSel = atendimentos.find((a) => String(a.id) === String(atendimento));
+  const opcoesAtendimento = atendimentos
+    .filter((a) => a.status === 'realizado')
+    .map((a) => ({
+      valor: a.id,
+      rotulo: `#${a.id} - ${(a.data_atendimento || '').slice(0, 10)}`,
+    }));
+
+  // Lotes válidos da vacina (com estoque e validade); mantém o atual em edição.
+  const opcoesLote = lotes
+    .filter(
+      (l) =>
+        String(l.vacina) === String(vacina) &&
+        ((l.data_validade >= hoje && l.quantidade_disponivel > 0) ||
+          String(l.id) === String(editando?.lote))
+    )
+    .map((l) => ({
+      valor: l.id,
+      rotulo: `${l.numero_lote} (val: ${l.data_validade}, disp: ${l.quantidade_disponivel})`,
+    }));
+
+  // Doses já registradas para este paciente nesta vacina.
+  const dosesTomadas = registros
+    .filter(
+      (r) =>
+        String(r.id) !== String(editando?.id) &&
+        String(r.vacina) === String(vacina) &&
+        String(r.paciente) === String(paciente)
+    )
+    .map((r) => Number(r.dose));
+
+  const opcoesDose = [];
+  if (totalDoses) {
+    for (let n = 1; n <= totalDoses; n++) {
+      if (!dosesTomadas.includes(n) || n === Number(editando?.dose)) {
+        opcoesDose.push({ valor: n, rotulo: `${n}ª dose` });
+      }
+    }
+  }
+  const esquemaCompleto = totalDoses && opcoesDose.length === 0;
+
+  const aoTrocarVacina = (v) => {
+    setVacina(v);
+    setLote(null);
+    setDose(null);
+  };
+  const aoTrocarPaciente = (p) => {
+    setPaciente(p);
+    setDose(null);
+  };
 
   const validar = () => {
     const e = {};
@@ -51,9 +112,14 @@ export default function RegistroForm({ route, navigation }) {
     if (!profissional) e.profissional = 'Selecione o profissional.';
     if (!unidadeSaude) e.unidadeSaude = 'Selecione a unidade de saúde.';
     if (!atendimento) e.atendimento = 'Selecione o atendimento.';
+    else if (atendimentoSel && atendimentoSel.status !== 'realizado')
+      e.atendimento = 'O atendimento precisa estar com status "realizado".';
     if (!dataAplicacao.trim()) e.dataAplicacao = 'Informe a data da aplicação.';
     else if (!/^\d{4}-\d{2}-\d{2}$/.test(dataAplicacao)) e.dataAplicacao = 'Use o formato AAAA-MM-DD. Ex: 2026-06-15';
-    if (!dose.trim()) e.dose = 'Informe a dose. Ex: 1ª Dose, Reforço';
+    else if (dataAplicacao > hoje) e.dataAplicacao = 'A data da aplicação não pode ser no futuro.';
+    if (esquemaCompleto)
+      e.dose = `Paciente já recebeu todas as ${totalDoses} doses desta vacina.`;
+    else if (dose == null) e.dose = 'Selecione a dose.';
     setErros(e);
     return Object.keys(e).length === 0;
   };
@@ -79,27 +145,38 @@ export default function RegistroForm({ route, navigation }) {
       }
       navigation.goBack();
     } catch (err) {
-      Alert.alert('Erro', 'Não foi possível salvar. Verifique os dados informados.');
+      if (err.response?.data) {
+        const mensagens = Object.entries(err.response.data)
+          .map(([campo, msgs]) => `${campo}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+          .join('\n');
+        Alert.alert('Erro ao salvar', mensagens);
+      } else {
+        Alert.alert('Erro', 'Não foi possível salvar. Verifique os dados informados.');
+      }
     }
   };
 
   return (
     <ScrollView style={formStyles.container}>
-      <Seletor label="Paciente *" valor={paciente} aoSelecionar={setPaciente} itens={pacientes.itens} carregando={pacientes.carregando} erro={erros.paciente}
+      <Seletor label="Paciente *" valor={paciente} aoSelecionar={aoTrocarPaciente} itens={opcoesPaciente} erro={erros.paciente}
         mensagemVazio="Nenhum paciente cadastrado. Cadastre um paciente primeiro." />
-      <Seletor label="Vacina *" valor={vacina} aoSelecionar={setVacina} itens={vacinas.itens} carregando={vacinas.carregando} erro={erros.vacina}
+      <Seletor label="Vacina *" valor={vacina} aoSelecionar={aoTrocarVacina} itens={opcoesVacina} erro={erros.vacina}
         mensagemVazio="Nenhuma vacina cadastrada. Cadastre uma vacina primeiro." />
-      <Seletor label="Lote *" valor={lote} aoSelecionar={setLote} itens={lotes.itens} carregando={lotes.carregando} erro={erros.lote}
-        mensagemVazio="Nenhum lote cadastrado. Cadastre um lote primeiro." />
-      <Seletor label="Profissional *" valor={profissional} aoSelecionar={setProfissional} itens={profissionais.itens} carregando={profissionais.carregando} erro={erros.profissional}
+      <Seletor label="Lote *" valor={lote} aoSelecionar={setLote} itens={opcoesLote} erro={erros.lote}
+        mensagemVazio={vacina ? 'Nenhum lote válido (com estoque e dentro da validade) para esta vacina.' : 'Selecione a vacina primeiro.'} />
+      <Seletor label="Profissional *" valor={profissional} aoSelecionar={setProfissional} itens={opcoesProfissional} erro={erros.profissional}
         mensagemVazio="Nenhum profissional cadastrado. Cadastre um profissional primeiro." />
-      <Seletor label="Unidade de Saúde *" valor={unidadeSaude} aoSelecionar={setUnidadeSaude} itens={unidades.itens} carregando={unidades.carregando} erro={erros.unidadeSaude}
+      <Seletor label="Unidade de Saúde *" valor={unidadeSaude} aoSelecionar={setUnidadeSaude} itens={opcoesUnidade} erro={erros.unidadeSaude}
         mensagemVazio="Nenhuma unidade cadastrada. Cadastre uma unidade primeiro." />
-      <Seletor label="Atendimento *" valor={atendimento} aoSelecionar={setAtendimento} itens={atendimentos.itens} carregando={atendimentos.carregando} erro={erros.atendimento}
-        mensagemVazio="Nenhum atendimento cadastrado. Cadastre um atendimento primeiro." />
+      <Seletor label="Atendimento (realizado) *" valor={atendimento} aoSelecionar={setAtendimento} itens={opcoesAtendimento} erro={erros.atendimento}
+        mensagemVazio="Nenhum atendimento realizado. Marque um atendimento como 'realizado' primeiro." />
 
-      <CampoTexto label="Data da Aplicação *" value={dataAplicacao} onChangeText={setDataAplicacao} placeholder="2026-06-15" ajuda="Formato: AAAA-MM-DD" erro={erros.dataAplicacao} />
-      <CampoTexto label="Dose *" value={dose} onChangeText={setDose} placeholder="Ex: 1ª Dose, Reforço" erro={erros.dose} />
+      <CampoData label="Data da Aplicação *" value={dataAplicacao} onChange={setDataAplicacao} maximumDate={new Date()} erro={erros.dataAplicacao} />
+
+      <Seletor label="Dose *" valor={dose} aoSelecionar={setDose} itens={opcoesDose} erro={erros.dose}
+        placeholder={vacina ? 'Selecione a dose' : 'Selecione a vacina primeiro'}
+        mensagemVazio={esquemaCompleto ? `Paciente já completou as ${totalDoses} doses desta vacina.` : 'Selecione o paciente e a vacina primeiro.'} />
+
       <CampoTexto label="Observação" value={observacao} onChangeText={setObservacao} multiline />
 
       <TouchableOpacity style={formStyles.btnSalvar} onPress={salvar}>
