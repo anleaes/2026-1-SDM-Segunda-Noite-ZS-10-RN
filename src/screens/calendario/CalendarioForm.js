@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Switch } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, ScrollView, Switch } from 'react-native';
 import api from '../../services/api';
 import CampoTexto from '../../components/CampoTexto';
 import Seletor from '../../components/Seletor';
 import useColecao from '../../hooks/useColecao';
 import { mostrarErroApi } from '../../services/erros';
 import { formStyles } from '../../components/formStyles';
+import { styles } from './CalendarioForm.styles';
 
 export default function CalendarioForm({ route, navigation }) {
   const editando = route.params?.calendario;
@@ -87,7 +88,3 @@ export default function CalendarioForm({ route, navigation }) {
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  switchContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 },
-});

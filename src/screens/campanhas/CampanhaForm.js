@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Switch } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, ScrollView, Switch } from 'react-native';
 import api from '../../services/api';
 import CampoTexto from '../../components/CampoTexto';
 import CampoData from '../../components/CampoData';
 import { formStyles, cores } from '../../components/formStyles';
+import { styles } from './CampanhaForm.styles';
 
 export default function CampanhaForm({ route, navigation }) {
   const editando = route.params?.campanha;
@@ -73,7 +74,3 @@ export default function CampanhaForm({ route, navigation }) {
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 },
-});

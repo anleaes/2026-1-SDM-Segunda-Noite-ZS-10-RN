@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Switch } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, ScrollView, Switch } from 'react-native';
 import api from '../../services/api';
 import CampoTexto from '../../components/CampoTexto';
 import Seletor from '../../components/Seletor';
 import useColecao from '../../hooks/useColecao';
 import { mostrarErroApi } from '../../services/erros';
 import { formStyles } from '../../components/formStyles';
+import { styles } from './PerfilForm.styles';
 
 export default function PerfilForm({ route, navigation }) {
   const editando = route.params?.perfil;
@@ -74,7 +75,3 @@ export default function PerfilForm({ route, navigation }) {
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 },
-});
