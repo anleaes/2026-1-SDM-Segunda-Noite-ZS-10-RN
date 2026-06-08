@@ -15,6 +15,8 @@ export default function CampanhaForm({ route, navigation }) {
   const [dataFim, setDataFim] = useState('');
   const [publicoAlvo, setPublicoAlvo] = useState('');
   const [ativa, setAtiva] = useState(true);
+  const [vacinasDisponiveis, setVacinasDisponiveis] = useState([]);
+  const [vacinasSelecionadas, setVacinasSelecionadas] = useState([]);
   const [erros, setErros] = useState({});
 
   useEffect(() => {
@@ -25,8 +27,28 @@ export default function CampanhaForm({ route, navigation }) {
       setDataFim(editando.data_fim);
       setPublicoAlvo(editando.publico_alvo || '');
       setAtiva(editando.ativa);
+      setVacinasSelecionadas(editando.vacinas || []);
     }
   }, []);
+
+  // Carrega a lista de vacinas para o usuário escolher quais entram na campanha.
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await api.get('/vacinas/');
+        setVacinasDisponiveis(data);
+      } catch (err) {
+        avisar('Erro', 'Não foi possível carregar as vacinas.');
+      }
+    })();
+  }, []);
+
+  // Marca/desmarca uma vacina na seleção (relação N:N campanha ↔ vacinas).
+  const alternarVacina = (id) => {
+    setVacinasSelecionadas((atual) =>
+      atual.includes(id) ? atual.filter((v) => v !== id) : [...atual, id]
+    );
+  };
 
   const validar = () => {
     const e = {};
@@ -43,7 +65,7 @@ export default function CampanhaForm({ route, navigation }) {
 
   const salvar = async () => {
     if (!validar()) return;
-    const dados = { nome, descricao, data_inicio: dataInicio, data_fim: dataFim, publico_alvo: publicoAlvo, ativa };
+    const dados = { nome, descricao, data_inicio: dataInicio, data_fim: dataFim, publico_alvo: publicoAlvo, ativa, vacinas: vacinasSelecionadas };
     try {
       if (editando) {
         await api.put(`/campanhas/${editando.id}/`, dados);
@@ -63,6 +85,28 @@ export default function CampanhaForm({ route, navigation }) {
       <CampoData label="Data Início *" value={dataInicio} onChange={setDataInicio} erro={erros.dataInicio} />
       <CampoData label="Data Fim *" value={dataFim} onChange={setDataFim} erro={erros.dataFim} />
       <CampoTexto label="Público Alvo" value={publicoAlvo} onChangeText={setPublicoAlvo} placeholder="Ex: Crianças de 0 a 5 anos" />
+
+      <Text style={formStyles.label}>Vacinas da campanha</Text>
+      {vacinasDisponiveis.length === 0 ? (
+        <Text style={formStyles.ajuda}>Nenhuma vacina cadastrada.</Text>
+      ) : (
+        <View style={styles.vacinasContainer}>
+          {vacinasDisponiveis.map((vacina) => {
+            const selecionada = vacinasSelecionadas.includes(vacina.id);
+            return (
+              <TouchableOpacity
+                key={vacina.id}
+                style={[styles.chip, selecionada && styles.chipSelecionado]}
+                onPress={() => alternarVacina(vacina.id)}
+              >
+                <Text style={[styles.chipTexto, selecionada && styles.chipTextoSelecionado]}>
+                  {selecionada ? '✓ ' : ''}{vacina.nome}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      )}
 
       <View style={styles.switchRow}>
         <Text style={formStyles.label}>Ativa</Text>
